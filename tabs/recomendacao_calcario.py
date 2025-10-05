@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from pathlib import Path
 import customtkinter as ctk
 from tkinter import messagebox
@@ -24,7 +25,7 @@ def _f(value, default=None):
     if isinstance(value, (int, float)):
         return float(value)
     text = str(value).strip().replace(',', '.')
-    if text == "":
+    if text == '':
         return default
     try:
         return float(text)
@@ -33,139 +34,138 @@ def _f(value, default=None):
 
 
 def make_section(parent, title, font):
-    frame = ctk.CTkFrame(parent)
-    frame.pack(fill="x", pady=(8, 0))
-    header = ctk.CTkLabel(frame, text=title, font=font, anchor="w")
-    header.pack(anchor="w", padx=10, pady=(10, 6))
-    body = ctk.CTkFrame(frame, fg_color="transparent")
-    body.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+    frame = ctk.CTkFrame(parent, fg_color='transparent')
+    frame.pack(fill='x', pady=(8, 0))
+    header = ctk.CTkLabel(frame, text=title, font=font, anchor='w')
+    header.pack(anchor='w', padx=10, pady=(10, 6))
+    body = ctk.CTkFrame(frame, fg_color='transparent')
+    body.pack(fill='both', expand=True, padx=10, pady=(0, 10))
     return body
 
 
 def add_tab(tabhost, ctx):
-    heading_font = ctk.CTkFont(size=13, weight="bold")
+    heading_font = ctk.CTkFont(size=13, weight='bold')
     body_font = ctk.CTkFont(size=11)
 
-    aba = tabhost.add_tab("Recomendação de Calcário")
-    outer = ctk.CTkScrollableFrame(aba, fg_color="transparent")
-    outer.pack(fill="both", expand=True, padx=16, pady=16)
+    aba = tabhost.add_tab('Recomendação de Calcário')
+    outer = ctk.CTkScrollableFrame(aba, fg_color='transparent')
+    outer.pack(fill='both', expand=True, padx=16, pady=16)
     outer.grid_columnconfigure(0, weight=1)
 
-    sec_inputs = make_section(outer, "Parâmetros complementares", heading_font)
+    sec_inputs = make_section(outer, 'Parâmetros complementares', heading_font)
     for col in range(4):
         sec_inputs.grid_columnconfigure(col, weight=1 if col % 2 == 1 else 0)
 
-    ctk.CTkLabel(sec_inputs, text="Sistema de manejo:", font=body_font).grid(row=0, column=0, sticky="w", pady=4)
-    sistema_var = ctk.StringVar(value="PD consolidado")
+    ctk.CTkLabel(sec_inputs, text='Sistema de manejo:', font=body_font).grid(row=0, column=0, sticky='w', pady=4)
+    sistema_var = ctk.StringVar(value='PD consolidado')
     ctk.CTkComboBox(
         sec_inputs,
-        values=["Convencional", "Implantação do PD", "PD consolidado"],
-        state="readonly",
+        values=['Convencional', 'Implantação do PD', 'PD consolidado'],
+        state='readonly',
         variable=sistema_var,
         width=180,
-    ).grid(row=0, column=1, sticky="w", padx=6)
+    ).grid(row=0, column=1, sticky='w', padx=6)
 
-    ctk.CTkLabel(sec_inputs, text="Profundidade da análise:", font=body_font).grid(row=0, column=2, sticky="w", pady=4)
-    profundidade_var = ctk.StringVar(value="0-20 cm")
+    ctk.CTkLabel(sec_inputs, text='Profundidade da análise:', font=body_font).grid(row=0, column=2, sticky='w', pady=4)
+    profundidade_var = ctk.StringVar(value='0-20 cm')
     ctk.CTkComboBox(
         sec_inputs,
-        values=["0-20 cm", "0-10 cm", "10-20 cm"],
-        state="readonly",
+        values=['0-20 cm', '0-10 cm', '10-20 cm'],
+        state='readonly',
         variable=profundidade_var,
         width=150,
-    ).grid(row=0, column=3, sticky="w", padx=6)
+    ).grid(row=0, column=3, sticky='w', padx=6)
 
-    ctk.CTkLabel(sec_inputs, text="pH alvo:", font=body_font).grid(row=1, column=0, sticky="w", pady=4)
-    ph_alvo_var = ctk.StringVar(value="6.0")
+    ctk.CTkLabel(sec_inputs, text='pH alvo:', font=body_font).grid(row=1, column=0, sticky='w', pady=4)
+    ph_alvo_var = ctk.StringVar(value='6.0')
     ctk.CTkComboBox(
         sec_inputs,
-        values=["5.5", "6.0", "6.5"],
-        state="readonly",
+        values=['5.5', '6.0', '6.5'],
+        state='readonly',
         variable=ph_alvo_var,
         width=120,
-    ).grid(row=1, column=1, sticky="w", padx=6)
+    ).grid(row=1, column=1, sticky='w', padx=6)
 
-    ctk.CTkLabel(sec_inputs, text="V% atual:", font=body_font).grid(row=1, column=2, sticky="w", pady=4)
+    ctk.CTkLabel(sec_inputs, text='V% atual:', font=body_font).grid(row=1, column=2, sticky='w', pady=4)
     v_var = ctk.StringVar()
-    ctk.CTkEntry(sec_inputs, textvariable=v_var, width=120).grid(row=1, column=3, sticky="w", padx=6)
+    ctk.CTkEntry(sec_inputs, textvariable=v_var, width=120).grid(row=1, column=3, sticky='w', padx=6)
 
-    ctk.CTkLabel(sec_inputs, text="Al% (saturação):", font=body_font).grid(row=2, column=0, sticky="w", pady=4)
+    ctk.CTkLabel(sec_inputs, text='Al% (saturação):', font=body_font).grid(row=2, column=0, sticky='w', pady=4)
     alpct_var = ctk.StringVar()
-    ctk.CTkEntry(sec_inputs, textvariable=alpct_var, width=120).grid(row=2, column=1, sticky="w", padx=6)
+    ctk.CTkEntry(sec_inputs, textvariable=alpct_var, width=120).grid(row=2, column=1, sticky='w', padx=6)
 
-    ctk.CTkLabel(sec_inputs, text="PRNT (%):", font=body_font).grid(row=2, column=2, sticky="w", pady=4)
-    prnt_var = ctk.StringVar(value="100")
-    ctk.CTkEntry(sec_inputs, textvariable=prnt_var, width=120).grid(row=2, column=3, sticky="w", padx=6)
+    ctk.CTkLabel(sec_inputs, text='PRNT (%):', font=body_font).grid(row=2, column=2, sticky='w', pady=4)
+    prnt_var = ctk.StringVar(value='100')
+    ctk.CTkEntry(sec_inputs, textvariable=prnt_var, width=120).grid(row=2, column=3, sticky='w', padx=6)
 
-    ctk.CTkLabel(sec_inputs, text="Al trocável (cmolc/dm³):", font=body_font).grid(row=3, column=0, sticky="w", pady=4)
+    ctk.CTkLabel(sec_inputs, text='Al trocável (cmolc/dm³):', font=body_font).grid(row=3, column=0, sticky='w', pady=4)
     altroc_var = ctk.StringVar()
-    ctk.CTkEntry(sec_inputs, textvariable=altroc_var, width=120).grid(row=3, column=1, sticky="w", padx=6)
+    ctk.CTkEntry(sec_inputs, textvariable=altroc_var, width=120).grid(row=3, column=1, sticky='w', padx=6)
 
-    sec_summary = make_section(outer, "Resumo da recomendação", heading_font)
+    sec_summary = make_section(outer, 'Resumo da recomendação', heading_font)
     sec_summary.grid_columnconfigure(1, weight=1)
     summary_vars = {
-        "dose": ctk.StringVar(value="-"),
-        "total": ctk.StringVar(value="-"),
-        "mode": ctk.StringVar(value="-"),
-        "epoca": ctk.StringVar(value="-"),
-        "tipo": ctk.StringVar(value="-"),
-        'tecnica': ctk.StringVar(value='-'),
+        'dose': ctk.StringVar(value='-'),
+        'total': ctk.StringVar(value='-'),
+        'mode': ctk.StringVar(value='-'),
+        'epoca': ctk.StringVar(value='-'),
+        'tipo': ctk.StringVar(value='-'),
+        'tecnica': ctk.StringVar(value='Informe os dados para calcular.'),
     }
     summary_rows = [
-        ("Dose recomendada:", "dose"),
-        ("Quantidade total:", "total"),
-        ("Modo de aplicação:", "mode"),
-        ("Época sugerida:", "epoca"),
-        ("Tipo de corretivo:", "tipo"),
+        ('Dose recomendada:', 'dose'),
+        ('Quantidade total:', 'total'),
+        ('Modo de aplicação:', 'mode'),
+        ('Época sugerida:', 'epoca'),
+        ('Tipo de corretivo:', 'tipo'),
         ('Recomendações técnicas:', 'tecnica'),
     ]
-    for idx, (label, key) in enumerate(summary_rows):
-        ctk.CTkLabel(sec_summary, text=label, font=body_font).grid(row=idx, column=0, sticky="w", pady=2)
-        ctk.CTkLabel(sec_summary, textvariable=summary_vars[key], font=body_font, anchor="w").grid(
-            row=idx, column=1, sticky="w", pady=2
-        )
+    for idx, (rotulo, chave) in enumerate(summary_rows):
+        ctk.CTkLabel(sec_summary, text=rotulo, font=body_font).grid(row=idx, column=0, sticky='w', pady=2)
+        ctk.CTkLabel(sec_summary, textvariable=summary_vars[chave], font=body_font, anchor='w', justify='left').grid(row=idx, column=1, sticky='w', pady=2)
 
-    btn_calc = ctk.CTkButton(outer, text="CALCULAR")
+    btn_calc = ctk.CTkButton(outer, text='CALCULAR')
     btn_calc.pack(pady=(12, 6))
 
-    toggle_state = {"visible": False}
-    toggle_button = ctk.CTkButton(outer, text="Exibir outras informações")
+    toggle_state = {'visible': False}
+    toggle_button = ctk.CTkButton(outer, text='Exibir outras informações', fg_color='#333333', hover_color='#454545')
     toggle_button.pack(pady=(4, 4))
 
-    sec_methods = make_section(outer, "Outras informações (PRNT 100%)", heading_font)
-    method_display_var = ctk.StringVar(value="Método predominante: -")
+    sec_methods = make_section(outer, 'Outras informações (PRNT 100%)', heading_font)
+    method_display_var = ctk.StringVar(value='Método predominante: -')
+    ctk.CTkLabel(sec_methods, textvariable=method_display_var, font=body_font, anchor='w').pack(fill='x', pady=(0, 4))
+
     mg_info_var = ctk.StringVar(value='Mg trocável: sem dados')
     ctk.CTkLabel(sec_methods, textvariable=mg_info_var, font=body_font, anchor='w').pack(fill='x', pady=(0, 4))
-    ctk.CTkLabel(sec_methods, textvariable=method_display_var, font=body_font, anchor="w").pack(fill="x", pady=(0, 4))
 
     method_labels = {
-        "SMP": ctk.CTkLabel(sec_methods, text="Tabela SMP: aguardando dados", font=body_font, anchor="w", justify="left"),
-        "V%": ctk.CTkLabel(sec_methods, text="Método da saturação (V%): aguardando dados", font=body_font, anchor="w", justify="left"),
-        "Polinomial": ctk.CTkLabel(sec_methods, text="Equação polinomial (MO/Al): aguardando dados", font=body_font, anchor="w", justify="left"),
+        'SMP': ctk.CTkLabel(sec_methods, text='Tabela SMP: aguardando dados', font=body_font, anchor='w', justify='left'),
+        'V%': ctk.CTkLabel(sec_methods, text='Método da saturação (V%): aguardando dados', font=body_font, anchor='w', justify='left'),
+        'Polinomial': ctk.CTkLabel(sec_methods, text='Equação polinomial (MO/Al): aguardando dados', font=body_font, anchor='w', justify='left'),
     }
-    for label in method_labels.values():
-        label.pack(fill="x", pady=2)
+    for lbl in method_labels.values():
+        lbl.pack(fill='x', pady=2)
 
     extras_wrapper = sec_methods.master
     extras_wrapper.pack_forget()
 
     def toggle_extras():
-        if toggle_state["visible"]:
+        if toggle_state['visible']:
             extras_wrapper.pack_forget()
-            toggle_state["visible"] = False
-            toggle_button.configure(text="Exibir outras informações")
+            toggle_state['visible'] = False
+            toggle_button.configure(text='Exibir outras informações')
         else:
-            extras_wrapper.pack(fill="x", pady=(8, 0), after=toggle_button)
-            toggle_state["visible"] = True
-            toggle_button.configure(text="Ocultar outras informações")
+            extras_wrapper.pack(fill='x', pady=(8, 0), after=toggle_button)
+            toggle_state['visible'] = True
+            toggle_button.configure(text='Ocultar outras informações')
 
     toggle_button.configure(command=toggle_extras)
 
     def atualizar_metodos(resultados):
         mapping = {
-            "SMP": "Tabela SMP",
-            "V%": "Método da saturação (V%)",
-            "Polinomial": "Equação polinomial (MO/Al)",
+            'SMP': 'Tabela SMP',
+            'V%': 'Método da saturação (V%)',
+            'Polinomial': 'Equação polinomial (MO/Al)',
         }
         for chave, label in method_labels.items():
             if chave in resultados:
@@ -175,19 +175,14 @@ def add_tab(tabhost, ctx):
 
     def calcular():
         try:
-            entradas = ctx.get_entradas() if hasattr(ctx, "get_entradas") else {}
-            smp = _f(entradas.get('Índice SMP'))
-            ph_agua = _f(entradas.get('pH (água)'))
+            entradas = ctx.get_entradas() if hasattr(ctx, 'get_entradas') else {}
+            smp = _f(entradas.get('Indice SMP'))
+            ph_agua = _f(entradas.get('pH (Agua)'))
             argila = _f(entradas.get('Argila (%)'))
             mo = _f(entradas.get('M.O. (%)'))
-            area = _f(entradas.get('Área (Ha)'), 0.0)
-            mg = _f(entradas.get('Mg (cmolc/dm³)'))
-            ctc = _f(entradas.get('CTC (cmolc/dm³)'))
-
-            if mg is not None:
-                mg_info_var.set(f"Mg trocável: {mg:.2f} cmolc/dm³ (limite 1.0)")
-            else:
-                mg_info_var.set('Mg trocável: sem dados')
+            area = _f(entradas.get('Area (Ha)'), 0.0)
+            mg = _f(entradas.get('Mg (cmolc/dm3)'))
+            ctc = _f(entradas.get('CTC (cmolc/dm3)'))
 
             v_pct = _f(v_var.get())
             alpct = _f(alpct_var.get())
@@ -237,9 +232,10 @@ def add_tab(tabhost, ctx):
                     summary_vars['tecnica'].set('Repetir análise na próxima safra para monitoramento.')
                 method_display_var.set('Método predominante: sem necessidade')
                 atualizar_metodos({})
-                label_ctx = ctx.labels_resultado.get('Calcário (PRNT 100%)')
+                label_ctx = ctx.labels_resultado.get('Calcario (PRNT 100%)')
                 if label_ctx is not None:
                     label_ctx.configure(text='0.00 t/ha')
+                mg_info_var.set('Mg trocável: sem dados')
                 return
 
             if not resultados_metodo:
@@ -302,9 +298,14 @@ def add_tab(tabhost, ctx):
 
             method_display_var.set(f"Método predominante: {metodo_usado}")
 
-            label_ctx = ctx.labels_resultado.get('Calcário (PRNT 100%)')
+            label_ctx = ctx.labels_resultado.get('Calcario (PRNT 100%)')
             if label_ctx is not None:
                 label_ctx.configure(text=f"{dose_prnt100:.2f} t/ha (pH alvo {desired_pH:.1f})")
+
+            if mg is not None:
+                mg_info_var.set(f"Mg trocável: {mg:.2f} cmolc/dm³ (limite 1.0)")
+            else:
+                mg_info_var.set('Mg trocável: sem dados')
         except ValueError as exc:
             messagebox.showerror('Calagem', str(exc))
         except Exception as exc:  # noqa: BLE001
@@ -316,14 +317,14 @@ def add_tab(tabhost, ctx):
         from PIL import Image
 
         base_dir = Path(__file__).resolve().parent
-        logo_path = base_dir / ".." / "assets" / "logo.png"
+        logo_path = base_dir / '..' / 'assets' / 'logo.png'
         if not logo_path.exists():
-            logo_path = base_dir / "logo.png"
+            logo_path = base_dir / 'logo.png'
         img = Image.open(logo_path)
         img.thumbnail((120, 60))
         logo = ctk.CTkImage(light_image=img, dark_image=img, size=(img.width, img.height))
-        holder = ctk.CTkLabel(outer, image=logo, text="")
+        holder = ctk.CTkLabel(outer, image=logo, text='')
         holder.image = logo
-        holder.pack(anchor="se", padx=10, pady=10)
+        holder.pack(anchor='se', padx=10, pady=10)
     except Exception:
         pass

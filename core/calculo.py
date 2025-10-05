@@ -25,41 +25,41 @@ def ligar_cultivo_var(var):
     _cultivo_var = var
 
 
-def classificar_parametro(valor, limites):
-    for faixa, limite in limites.items():
-        if eval(limite):
+def classificar_parametro(valor: float, limites: dict[str, str]) -> str:
+    for faixa, condicao in limites.items():
+        if eval(condicao):
             return faixa
     return "Desconhecido"
 
 
 def _valor_widget(widget):
     try:
-        valor = widget.get()
+        texto = widget.get()
     except Exception:
         return ""
-    return str(valor).strip().replace(",", ".")
+    return str(texto).strip().replace(',', '.')
 
 
-def _float_obrigatorio(chave):
+def _float_obrigatorio(chave: str) -> float:
     widget = campos.get(chave)
     if widget is None:
         raise ValueError(f"Campo '{chave}' não encontrado")
-    raw = _valor_widget(widget)
-    if raw == "":
+    bruto = _valor_widget(widget)
+    if bruto == "":
         raise ValueError(f"Campo '{chave}' vazio")
-    return float(raw)
+    return float(bruto)
 
 
-def _float_opcional(chaves: Iterable[str], default=0.0):
+def _float_opcional(chaves: Iterable[str], default: float = 0.0) -> float:
     for chave in chaves:
         widget = campos.get(chave)
         if widget is None:
             continue
-        raw = _valor_widget(widget)
-        if raw == "":
+        bruto = _valor_widget(widget)
+        if bruto == "":
             continue
         try:
-            return float(raw)
+            return float(bruto)
         except ValueError:
             continue
     return default
@@ -70,17 +70,17 @@ def calcular():
     if _cultivo_var is None:
         return False
     try:
-        smp = _float_obrigatorio('Índice SMP')
+        smp = _float_obrigatorio('Indice SMP')
         produtividade = _float_obrigatorio('Produtividade esperada')
         cultivo = _cultivo_var.get()
 
-        fosforo = _float_opcional(['Fósforo (mg/dm³)', 'P (mg/dm³)'], default=0.0)
-        potassio = _float_opcional(['Potássio (mg/dm³)', 'K (mg/dm³)'], default=0.0)
-        enxofre = _float_opcional(['Enxofre (mg/dm³)', 'S (mg/dm³)'], default=0.0)
+        fosforo = _float_opcional(['Fosforo (mg/dm3)', 'P (mg/dm3)'], default=0.0)
+        potassio = _float_opcional(['Potassio (mg/dm3)', 'K (mg/dm3)'], default=0.0)
+        enxofre = _float_opcional(['Enxofre (mg/dm3)', 'S (mg/dm3)'], default=0.0)
 
         argila = _float_obrigatorio('Argila (%)')
-        ctc = _float_obrigatorio('CTC (cmolc/dm³)')
-        ph = _float_obrigatorio('pH (água)')
+        ctc = _float_obrigatorio('CTC (cmolc/dm3)')
+        ph = _float_obrigatorio('pH (Agua)')
 
         if argila > 60:
             classe_argila = 1
@@ -93,148 +93,140 @@ def calcular():
 
         if classe_argila == 1:
             class_p = classificar_parametro(fosforo, {
-                "Muito Baixo": "valor <= 3",
-                "Baixo": "3 < valor <= 6",
-                "Médio": "6 < valor <= 9",
-                "Alto": "9 < valor <= 18",
-                "Muito Alto": "valor > 18",
+                'Muito Baixo': 'valor <= 3',
+                'Baixo': '3 < valor <= 6',
+                'Medio': '6 < valor <= 9',
+                'Alto': '9 < valor <= 18',
+                'Muito Alto': 'valor > 18',
             })
         elif classe_argila == 2:
             class_p = classificar_parametro(fosforo, {
-                "Muito Baixo": "valor <= 4",
-                "Baixo": "4 < valor <= 8",
-                "Médio": "8 < valor <= 12",
-                "Alto": "12 < valor <= 24",
-                "Muito Alto": "valor > 24",
+                'Muito Baixo': 'valor <= 4',
+                'Baixo': '4 < valor <= 8',
+                'Medio': '8 < valor <= 12',
+                'Alto': '12 < valor <= 24',
+                'Muito Alto': 'valor > 24',
             })
         elif classe_argila == 3:
             class_p = classificar_parametro(fosforo, {
-                "Muito Baixo": "valor <= 6",
-                "Baixo": "6 < valor <= 12",
-                "Médio": "12 < valor <= 18",
-                "Alto": "18 < valor <= 36",
-                "Muito Alto": "valor > 36",
+                'Muito Baixo': 'valor <= 6',
+                'Baixo': '6 < valor <= 12',
+                'Medio': '12 < valor <= 18',
+                'Alto': '18 < valor <= 36',
+                'Muito Alto': 'valor > 36',
             })
         else:
             class_p = classificar_parametro(fosforo, {
-                "Muito Baixo": "valor <= 10",
-                "Baixo": "10 < valor <= 20",
-                "Médio": "20 < valor <= 30",
-                "Alto": "30 < valor <= 60",
-                "Muito Alto": "valor > 60",
+                'Muito Baixo': 'valor <= 10',
+                'Baixo': '10 < valor <= 20',
+                'Medio': '20 < valor <= 30',
+                'Alto': '30 < valor <= 60',
+                'Muito Alto': 'valor > 60',
             })
 
         if ctc <= 7.5:
             class_k = classificar_parametro(potassio, {
-                "Muito Baixo": "valor <= 20",
-                "Baixo": "20 < valor <= 40",
-                "Médio": "40 < valor <= 60",
-                "Alto": "valor > 60",
+                'Muito Baixo': 'valor <= 30',
+                'Baixo': '30 < valor <= 60',
+                'Medio': '60 < valor <= 90',
+                'Alto': '90 < valor <= 180',
+                'Muito Alto': 'valor > 180',
             })
         elif ctc <= 15:
             class_k = classificar_parametro(potassio, {
-                "Muito Baixo": "valor <= 30",
-                "Baixo": "30 < valor <= 60",
-                "Médio": "60 < valor <= 90",
-                "Alto": "90 < valor <= 180",
-                "Muito Alto": "valor > 180",
-            })
-        elif ctc <= 30:
-            class_k = classificar_parametro(potassio, {
-                "Muito Baixo": "valor <= 40",
-                "Baixo": "40 < valor <= 80",
-                "Médio": "80 < valor <= 120",
-                "Alto": "120 < valor <= 240",
-                "Muito Alto": "valor > 240",
+                'Muito Baixo': 'valor <= 40',
+                'Baixo': '40 < valor <= 80',
+                'Medio': '80 < valor <= 120',
+                'Alto': '120 < valor <= 240',
+                'Muito Alto': 'valor > 240',
             })
         else:
             class_k = classificar_parametro(potassio, {
-                "Muito Baixo": "valor <= 45",
-                "Baixo": "45 < valor <= 90",
-                "Médio": "90 < valor <= 135",
-                "Alto": "135 < valor <= 270",
-                "Muito Alto": "valor > 270",
+                'Muito Baixo': 'valor <= 45',
+                'Baixo': '45 < valor <= 90',
+                'Medio': '90 < valor <= 135',
+                'Alto': '135 < valor <= 270',
+                'Muito Alto': 'valor > 270',
             })
 
         class_ctc = classificar_parametro(ctc, {
-            "Baixa": "valor <= 7.5",
-            "Média": "7.5 < valor <= 15",
-            "Alta": "15 < valor <= 30",
-            "Muito Alta": "valor > 30",
+            'Baixa': 'valor <= 7.5',
+            'Media': '7.5 < valor <= 15',
+            'Alta': '15 < valor <= 30',
+            'Muito Alta': 'valor > 30',
         })
         class_mo = classificar_parametro(_float_opcional(['M.O. (%)'], default=0), {
-            "Baixa": "valor <= 2.5",
-            "Média": "2.5 < valor <= 5",
-            "Alta": "valor > 5",
+            'Baixa': 'valor <= 2.5',
+            'Media': '2.5 < valor <= 5',
+            'Alta': 'valor > 5',
         })
-        class_ca = classificar_parametro(_float_opcional(['Ca (cmolc/dm³)'], default=0), {
-            "Baixo": "valor < 2",
-            "Médio": "2 <= valor <= 4",
-            "Alto": "valor > 4",
+        class_ca = classificar_parametro(_float_opcional(['Ca (cmolc/dm3)'], default=0), {
+            'Baixo': 'valor < 2',
+            'Medio': '2 <= valor <= 4',
+            'Alto': 'valor > 4',
         })
-        class_mg = classificar_parametro(_float_opcional(['Mg (cmolc/dm³)'], default=0), {
-            "Baixo": "valor < 0.5",
-            "Médio": "0.5 <= valor <= 1",
-            "Alto": "valor > 1",
+        class_mg = classificar_parametro(_float_opcional(['Mg (cmolc/dm3)'], default=0), {
+            'Baixo': 'valor < 0.5',
+            'Medio': '0.5 <= valor <= 1',
+            'Alto': 'valor > 1',
         })
         class_s = classificar_parametro(enxofre, {
-            "Baixo": "valor < 2",
-            "Médio": "2 <= valor <= 5",
-            "Alto": "valor > 5",
+            'Baixo': 'valor < 2',
+            'Medio': '2 <= valor <= 5',
+            'Alto': 'valor > 5',
         })
-        class_zn = classificar_parametro(_float_opcional(['Zn (mg/dm³)'], default=0), {
-            "Baixo": "valor < 0.2",
-            "Médio": "0.2 <= valor <= 0.5",
-            "Alto": "valor > 0.5",
+        class_zn = classificar_parametro(_float_opcional(['Zn (mg/dm3)'], default=0), {
+            'Baixo': 'valor < 0.2',
+            'Medio': '0.2 <= valor <= 0.5',
+            'Alto': 'valor > 0.5',
         })
-        class_cu = classificar_parametro(_float_opcional(['Cu (mg/dm³)'], default=0), {
-            "Baixo": "valor < 2",
-            "Médio": "2 <= valor <= 4",
-            "Alto": "valor > 4",
+        class_cu = classificar_parametro(_float_opcional(['Cu (mg/dm3)'], default=0), {
+            'Baixo': 'valor < 2',
+            'Medio': '2 <= valor <= 4',
+            'Alto': 'valor > 4',
         })
-        class_b = classificar_parametro(_float_opcional(['B (mg/dm³)'], default=0), {
-            "Baixo": "valor <= 0.1",
-            "Médio": "0.1 < valor <= 0.3",
-            "Alto": "valor > 0.3",
+        class_b = classificar_parametro(_float_opcional(['B (mg/dm3)'], default=0), {
+            'Baixo': 'valor <= 0.1',
+            'Medio': '0.1 < valor <= 0.3',
+            'Alto': 'valor > 0.3',
         })
-        class_mn = classificar_parametro(_float_opcional(['Mn (mg/dm³)'], default=0), {
-            "Baixo": "valor < 2.5",
-            "Médio": "2.5 <= valor <= 5",
-            "Alto": "valor > 5",
+        class_mn = classificar_parametro(_float_opcional(['Mn (mg/dm3)'], default=0), {
+            'Baixo': 'valor < 2.5',
+            'Medio': '2.5 <= valor <= 5',
+            'Alto': 'valor > 5',
         })
 
         dose_calagem = TABELA_SMP_FIXA.get(round(smp, 1), 'SMP fora da faixa')
 
         tabela_p = {
-            "1º Cultivo": {"Muito Baixo": 155, "Baixo": 95, "Médio": 85, "Alto": 45, "Muito Alto": 0},
-            "2º Cultivo": {"Muito Baixo": 95, "Baixo": 75, "Médio": 45, "Alto": 45, "Muito Alto": 30},
+            '1º Cultivo': {'Muito Baixo': 155, 'Baixo': 95, 'Medio': 85, 'Alto': 45, 'Muito Alto': 0},
+            '2º Cultivo': {'Muito Baixo': 95, 'Baixo': 75, 'Medio': 45, 'Alto': 45, 'Muito Alto': 30},
         }
         tabela_k = {
-            "1º Cultivo": {"Muito Baixo": 155, "Baixo": 115, "Médio": 105, "Alto": 75, "Muito Alto": 0},
-            "2º Cultivo": {"Muito Baixo": 95, "Baixo": 75, "Médio": 75, "Alto": 75, "Muito Alto": 50},
+            '1º Cultivo': {'Muito Baixo': 155, 'Baixo': 115, 'Medio': 105, 'Alto': 75, 'Muito Alto': 0},
+            '2º Cultivo': {'Muito Baixo': 95, 'Baixo': 75, 'Medio': 75, 'Alto': 75, 'Muito Alto': 50},
         }
 
         base_p = tabela_p.get(cultivo, {}).get(class_p, 0)
-        correcao_p = max(0, produtividade - 3) * 15
+        correcao_p = max(0.0, produtividade - 3.0) * 15
         total_p = base_p + correcao_p
 
         base_k = tabela_k.get(cultivo, {}).get(class_k, 0)
-        correcao_k = max(0, produtividade - 3) * 25
+        correcao_k = max(0.0, produtividade - 3.0) * 25
         total_k = base_k + correcao_k
 
-        enxofre_ha = (enxofre * 2000) / 1000.0
-        dose_s = 20 if enxofre_ha < 10 else 0
+        dose_s = 20 if (enxofre * 2000 / 1000.0) < 10 else 0
         dose_mo = 0.04 if ph < 5.5 and argila < 30 else 0
 
         recom_p2o5 = float(total_p)
         recom_k2o = float(total_k)
 
         resultados = {
-            "Calcário (PRNT 100%)": f"{dose_calagem} t/ha",
-            "Fósforo (P2O5)": f"{total_p:.1f} kg/ha",
-            "Potássio (K2O)": f"{total_k:.1f} kg/ha",
-            "Enxofre (S)": f"{dose_s} kg/ha",
-            "Molibdênio (Mo)": f"{dose_mo * 1000:.0f} g/ha",
+            'Calcario (PRNT 100%)': f"{dose_calagem} t/ha",
+            'Fosforo (P2O5)': f"{total_p:.1f} kg/ha",
+            'Potassio (K2O)': f"{total_k:.1f} kg/ha",
+            'Enxofre (S)': f"{dose_s} kg/ha",
+            'Molibdenio (Mo)': f"{dose_mo * 1000:.0f} g/ha",
         }
         for chave, valor in resultados.items():
             widget = labels_resultado.get(chave)
@@ -245,18 +237,18 @@ def calcular():
                     pass
 
         classificacoes = {
-            "Classe do teor de Argila": f"Classe {classe_argila}",
-            "CTC": class_ctc,
-            "M.O.": class_mo,
-            "Fósforo (P)": class_p,
-            "Potássio (K)": class_k,
-            "Cálcio (Ca)": class_ca,
-            "Magnésio (Mg)": class_mg,
-            "Enxofre (S)": class_s,
-            "Zinco (Zn)": class_zn,
-            "Cobre (Cu)": class_cu,
-            "Boro (B)": class_b,
-            "Manganês (Mn)": class_mn,
+            'Classe do teor de Argila': f"Classe {classe_argila}",
+            'CTC': class_ctc,
+            'M.O.': class_mo,
+            'Fosforo (P)': class_p,
+            'Potassio (K)': class_k,
+            'Calcio (Ca)': class_ca,
+            'Magnesio (Mg)': class_mg,
+            'Enxofre (S)': class_s,
+            'Zinco (Zn)': class_zn,
+            'Cobre (Cu)': class_cu,
+            'Boro (B)': class_b,
+            'Manganes (Mn)': class_mn,
         }
         for chave, valor in classificacoes.items():
             widget = labels_classificacao.get(chave)
@@ -267,5 +259,5 @@ def calcular():
                     pass
         return True
     except Exception as exc:
-        messagebox.showerror("Erro", f"Entrada inválida: {exc}")
+        messagebox.showerror('Erro', f"Entrada inválida: {exc}")
         return False
