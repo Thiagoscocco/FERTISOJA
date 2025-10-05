@@ -68,7 +68,7 @@ def _float_opcional(chaves: Iterable[str], default=0.0):
 def calcular():
     global recom_p2o5, recom_k2o
     if _cultivo_var is None:
-        return
+        return False
     try:
         smp = _float_obrigatorio('Índice SMP')
         produtividade = _float_obrigatorio('Produtividade esperada')
@@ -265,5 +265,7 @@ def calcular():
                     widget.configure(text=valor)
                 except Exception:
                     pass
+        return True
     except Exception as exc:
         messagebox.showerror("Erro", f"Entrada inválida: {exc}")
+        return False

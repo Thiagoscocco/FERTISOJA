@@ -56,14 +56,13 @@ aba_entrada.grid_columnconfigure(0, weight=1)
 aba_entrada.grid_rowconfigure(0, weight=1)
 aba_entrada.grid_rowconfigure(1, weight=0)
 
-conteudo = ctk.CTkFrame(aba_entrada, fg_color="transparent")
+conteudo = ctk.CTkScrollableFrame(aba_entrada, fg_color="transparent")
 conteudo.grid(row=0, column=0, sticky="nsew")
 conteudo.grid_columnconfigure(0, weight=1)
 conteudo.grid_columnconfigure(1, weight=0)
-conteudo.grid_rowconfigure(0, weight=1)
 
-col_esq = ctk.CTkScrollableFrame(conteudo, fg_color="transparent")
-col_esq.grid(row=0, column=0, sticky="nsew")
+col_esq = ctk.CTkFrame(conteudo, fg_color="transparent")
+col_esq.grid(row=0, column=0, sticky="nwe")
 
 col_dir = ctk.CTkFrame(conteudo, fg_color="transparent")
 col_dir.grid(row=0, column=1, sticky="ne", padx=(20, 0))
@@ -111,10 +110,21 @@ for nome in ['P (mg/dm³)', 'K (mg/dm³)', 'S (mg/dm³)', 'Ca (cmolc/dm³)', 'Mg
     campos[nome] = entrada
     linha += 1
 
+status_var = ctk.StringVar(value="")
+
+def executar_calculo_principal():
+    status_var.set("")
+    resultado = calculo.calcular()
+    if resultado:
+        status_var.set('C\u00e1lculo atualizado com sucesso.')
+        janela.after(4000, lambda: status_var.set(""))
+
 rodape = ctk.CTkFrame(aba_entrada, fg_color="transparent")
 rodape.grid(row=1, column=0, sticky="ew", padx=16, pady=(8, 16))
-rodape.grid_columnconfigure(0, weight=1)
-ctk.CTkButton(rodape, text="CALCULAR", command=calculo.calcular).grid(row=0, column=0, sticky="e")
+rodape.grid_columnconfigure(0, weight=0)
+rodape.grid_columnconfigure(1, weight=1)
+ctk.CTkButton(rodape, text="CALCULAR", command=executar_calculo_principal).grid(row=0, column=0, pady=0)
+ctk.CTkLabel(rodape, textvariable=status_var, text_color="#57C17A").grid(row=0, column=1, sticky="w", padx=(12, 0))
 
 logo_path = Path(__file__).resolve().parent / "assets" / "logo.png"
 try:
@@ -157,20 +167,5 @@ sec_class_micro = make_section(frame_class, "MICRONUTRIENTES", heading_font)
 for nome in ['Zinco (Zn)', 'Cobre (Cu)', 'Boro (B)', 'Manganês (Mn)']:
     add_value_row(sec_class_micro, nome, labels_classificacao)
 
-aba_resultado = tabhost.add_tab('Recomendações')
-frame_result = ctk.CTkFrame(aba_resultado, fg_color="transparent")
-frame_result.pack(fill="both", expand=True, padx=16, pady=16)
-
-sec_result_calc = make_section(frame_result, "CALCÁRIO", heading_font)
-for nome in ['Calcário (PRNT 100%)']:
-    add_value_row(sec_result_calc, nome, labels_resultado)
-
-sec_result_macro = make_section(frame_result, "MACRONUTRIENTES", heading_font)
-for nome in ['Fósforo (P2O5)', 'Potássio (K2O)', 'Enxofre (S)']:
-    add_value_row(sec_result_macro, nome, labels_resultado)
-
-sec_result_micro = make_section(frame_result, "MICRONUTRIENTES", heading_font)
-for nome in ['Molibdênio (Mo)']:
-    add_value_row(sec_result_micro, nome, labels_resultado)
 
 janela.mainloop()
