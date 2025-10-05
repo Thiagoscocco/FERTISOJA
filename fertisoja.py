@@ -60,8 +60,9 @@ conteudo = ctk.CTkFrame(aba_entrada, fg_color="transparent")
 conteudo.grid(row=0, column=0, sticky="nsew")
 conteudo.grid_columnconfigure(0, weight=1)
 conteudo.grid_columnconfigure(1, weight=0)
+conteudo.grid_rowconfigure(0, weight=1)
 
-col_esq = ctk.CTkFrame(conteudo, fg_color="transparent")
+col_esq = ctk.CTkScrollableFrame(conteudo, fg_color="transparent")
 col_esq.grid(row=0, column=0, sticky="nsew")
 
 col_dir = ctk.CTkFrame(conteudo, fg_color="transparent")
