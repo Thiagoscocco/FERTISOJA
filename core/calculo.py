@@ -43,7 +43,7 @@ def _valor_widget(widget):
 def _float_obrigatorio(chave: str) -> float:
     widget = campos.get(chave)
     if widget is None:
-        raise ValueError(f"Campo '{chave}' não encontrado")
+        raise ValueError(f"Campo '{chave}' nÃ£o encontrado")
     bruto = _valor_widget(widget)
     if bruto == "":
         raise ValueError(f"Campo '{chave}' vazio")
@@ -199,12 +199,12 @@ def calcular():
         dose_calagem = TABELA_SMP_FIXA.get(round(smp, 1), 'SMP fora da faixa')
 
         tabela_p = {
-            '1º Cultivo': {'Muito Baixo': 155, 'Baixo': 95, 'Medio': 85, 'Alto': 45, 'Muito Alto': 0},
-            '2º Cultivo': {'Muito Baixo': 95, 'Baixo': 75, 'Medio': 45, 'Alto': 45, 'Muito Alto': 30},
+            '1Âº Cultivo': {'Muito Baixo': 155, 'Baixo': 95, 'Medio': 85, 'Alto': 45, 'Muito Alto': 0},
+            '2Âº Cultivo': {'Muito Baixo': 95, 'Baixo': 75, 'Medio': 45, 'Alto': 45, 'Muito Alto': 30},
         }
         tabela_k = {
-            '1º Cultivo': {'Muito Baixo': 155, 'Baixo': 115, 'Medio': 105, 'Alto': 75, 'Muito Alto': 0},
-            '2º Cultivo': {'Muito Baixo': 95, 'Baixo': 75, 'Medio': 75, 'Alto': 75, 'Muito Alto': 50},
+            '1Âº Cultivo': {'Muito Baixo': 155, 'Baixo': 115, 'Medio': 105, 'Alto': 75, 'Muito Alto': 0},
+            '2Âº Cultivo': {'Muito Baixo': 95, 'Baixo': 75, 'Medio': 75, 'Alto': 75, 'Muito Alto': 50},
         }
 
         base_p = tabela_p.get(cultivo, {}).get(class_p, 0)
@@ -240,15 +240,15 @@ def calcular():
             'Classe do teor de Argila': f"Classe {classe_argila}",
             'CTC': class_ctc,
             'M.O.': class_mo,
-            'Fosforo (P)': class_p,
-            'Potassio (K)': class_k,
-            'Calcio (Ca)': class_ca,
-            'Magnesio (Mg)': class_mg,
+            'Fósforo (P)': class_p,
+            'Potássio (K)': class_k,
+            'Cálcio (Ca)': class_ca,
+            'Magnésio (Mg)': class_mg,
             'Enxofre (S)': class_s,
             'Zinco (Zn)': class_zn,
             'Cobre (Cu)': class_cu,
             'Boro (B)': class_b,
-            'Manganes (Mn)': class_mn,
+            'Manganês (Mn)': class_mn,
         }
         for chave, valor in classificacoes.items():
             widget = labels_classificacao.get(chave)
@@ -259,5 +259,6 @@ def calcular():
                     pass
         return True
     except Exception as exc:
-        messagebox.showerror('Erro', f"Entrada inválida: {exc}")
+        messagebox.showerror('Erro', f"Entrada invÃ¡lida: {exc}")
         return False
+
