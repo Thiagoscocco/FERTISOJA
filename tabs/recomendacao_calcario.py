@@ -47,6 +47,8 @@ def add_tab(tabhost, ctx):
     heading_font = ctk.CTkFont(size=13, weight='bold')
     body_font = ctk.CTkFont(size=11)
 
+    logo_image = getattr(ctx, 'logo_image', None)
+
     aba = tabhost.add_tab('Recomendação de Calcário')
     outer = ctk.CTkScrollableFrame(aba, fg_color='transparent')
     outer.pack(fill='both', expand=True, padx=16, pady=16)
@@ -313,18 +315,23 @@ def add_tab(tabhost, ctx):
 
     btn_calc.configure(command=calcular)
 
-    try:
-        from PIL import Image
+    if logo_image is not None:
+        logo_label = ctk.CTkLabel(outer, image=logo_image, text='')
+        logo_label.pack(anchor='se', padx=10, pady=10)
+        logo_label.image = logo_image
+    else:
+        try:
+            from PIL import Image
 
-        base_dir = Path(__file__).resolve().parent
-        logo_path = base_dir / '..' / 'assets' / 'logo.png'
-        if not logo_path.exists():
-            logo_path = base_dir / 'logo.png'
-        img = Image.open(logo_path)
-        img.thumbnail((120, 60))
-        logo = ctk.CTkImage(light_image=img, dark_image=img, size=(img.width, img.height))
-        holder = ctk.CTkLabel(outer, image=logo, text='')
-        holder.image = logo
-        holder.pack(anchor='se', padx=10, pady=10)
-    except Exception:
-        pass
+            base_dir = Path(__file__).resolve().parent
+            logo_path = base_dir / '..' / 'assets' / 'logo.png'
+            if not logo_path.exists():
+                logo_path = base_dir / 'logo.png'
+            img = Image.open(logo_path)
+            img.thumbnail((120, 60))
+            logo = ctk.CTkImage(light_image=img, dark_image=img, size=(img.width, img.height))
+            holder = ctk.CTkLabel(outer, image=logo, text='')
+            holder.image = logo
+            holder.pack(anchor='se', padx=10, pady=10)
+        except Exception:
+            pass

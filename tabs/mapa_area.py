@@ -254,6 +254,7 @@ def rings_to_pixel(polys, z, center_px, center_py, canvas_w, canvas_h):
 
 def add_tab(tabhost, ctx):
     titulo_font = ctk.CTkFont(size=13, weight="bold")
+    logo_image = getattr(ctx, 'logo_image', None)
     aba = tabhost.add_tab("Mapa do Talhão")
     frame = ctk.CTkFrame(aba, fg_color="transparent")
     frame.pack(fill="both", expand=True, padx=16, pady=16)
@@ -418,3 +419,8 @@ def add_tab(tabhost, ctx):
             messagebox.showerror("Erro ao calcular", str(e))
 
     ctk.CTkButton(btns_wrap, text="Calcular Área", command=calcular_area).pack(pady=4)
+
+    if logo_image is not None:
+        logo_label = ctk.CTkLabel(frame, image=logo_image, text='')
+        logo_label.pack(anchor='se', padx=12, pady=12)
+        logo_label.image = logo_image

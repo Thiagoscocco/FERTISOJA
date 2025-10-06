@@ -101,7 +101,7 @@ def _coletar_diagnostico_entradas(entradas: dict) -> dict:
     }
 
 
-def montar_aba_condicoes(tabhost: TabHost, heading_font, labels_classificacao):
+def montar_aba_condicoes(tabhost: TabHost, heading_font, labels_classificacao, logo_image=None):
     body_font = ctk.CTkFont(size=11)
     bold_font = ctk.CTkFont(size=11, weight='bold')
 
@@ -128,8 +128,8 @@ def montar_aba_condicoes(tabhost: TabHost, heading_font, labels_classificacao):
     summary_vars = {
         'textura': ctk.StringVar(value='Classe de argila: - | CTC: -'),
         'mo': ctk.StringVar(value='Matéria orgânica: -'),
-        'p': ctk.StringVar(value='Resposta ao P: aguardando dados'),
-        'k': ctk.StringVar(value='Resposta ao K: aguardando dados'),
+        'p': ctk.StringVar(value='-'),
+        'k': ctk.StringVar(value='-'),
         'tecnica': ctk.StringVar(value='Informe os dados e calcule na aba principal para obter o diagnóstico.'),
     }
     resumo_rows = [
@@ -144,12 +144,17 @@ def montar_aba_condicoes(tabhost: TabHost, heading_font, labels_classificacao):
         ctk.CTkLabel(resumo_section, textvariable=summary_vars[chave], font=body_font, anchor='w', justify='left').grid(row=idx, column=1, sticky='w', pady=2)
 
     alertas_section = make_section(outer, 'ALERTAS', heading_font)
-    alertas_label = ctk.CTkLabel(alertas_section, text='Preencha os dados para gerar alertas.', font=body_font, anchor='w', justify='left', wraplength=520)
+    alertas_label = ctk.CTkLabel(alertas_section, text='Preencha os dados para gerar alertas.', font=body_font, anchor='w', justify='left', wraplength=520, text_color='#F4B942')
     alertas_label.pack(fill='x')
 
     notas_section = make_section(outer, 'NOTAS', heading_font)
     observacoes_label = ctk.CTkLabel(notas_section, text='', font=body_font, anchor='w', justify='left', wraplength=520)
     observacoes_label.pack(fill='x')
+
+    if logo_image is not None:
+        logo_label = ctk.CTkLabel(aba, image=logo_image, text='')
+        logo_label.pack(anchor='se', padx=12, pady=12)
+        logo_label.image = logo_image
 
     return {
         'summary': summary_vars,
@@ -193,10 +198,10 @@ def atualizar_condicoes(ctx: AppContext):
         summary['mo'].set('Matéria orgânica: -')
 
     p_prob = macros['P'].get('prob_resposta')
-    summary['p'].set(f"Resposta ao P: {p_prob}" if p_prob else 'Resposta ao P: -')
+    summary['p'].set(p_prob if p_prob else '-')
 
     k_prob = macros['K'].get('prob_resposta')
-    summary['k'].set(f"Resposta ao K: {k_prob}" if k_prob else 'Resposta ao K: -')
+    summary['k'].set(k_prob if k_prob else '-')
 
     if macros['P'].get('classe') in ('Muito Baixo', 'Baixo') or macros['K'].get('classe') in ('Muito Baixo', 'Baixo'):
         summary['tecnica'].set('Repetir a análise na próxima safra.\nAlta chance de resposta a P/K.')
@@ -212,7 +217,7 @@ def atualizar_condicoes(ctx: AppContext):
     controles['observacoes_label'].configure(text=observacoes_texto)
 
 
-def montar_aba_adubacao(tabhost: TabHost, heading_font, ctx: AppContext):
+def montar_aba_adubacao(tabhost: TabHost, heading_font, ctx: AppContext, logo_image=None):
     body_font = ctk.CTkFont(size=11)
     bold_font = ctk.CTkFont(size=11, weight='bold')
 
@@ -245,6 +250,7 @@ def montar_aba_adubacao(tabhost: TabHost, heading_font, ctx: AppContext):
     ctk.CTkLabel(outer, textvariable=status_var, font=body_font, anchor='w', justify='left', wraplength=520).pack(fill='x', pady=(12, 0))
 
     metodo_section = make_section(outer, 'DEFINIR ADUBAÇÃO', heading_font)
+    metodo_section.grid_columnconfigure(0, weight=0)
     metodo_section.grid_columnconfigure(1, weight=1)
     metodo_section.grid_columnconfigure(2, weight=0)
 
@@ -272,6 +278,9 @@ def montar_aba_adubacao(tabhost: TabHost, heading_font, ctx: AppContext):
     recomendacao_var = ctk.StringVar(value='Recomendações técnicas: -')
     ctk.CTkLabel(metodo_section, textvariable=recomendacao_var, font=body_font, anchor='w', justify='left', wraplength=520).grid(row=4, column=0, columnspan=3, sticky='w', pady=(8, 0))
 
+    definir_btn = ctk.CTkButton(outer, text='Definir adubação', command=lambda: aplicar_metodo_adubacao(ctx))
+    definir_btn.pack(pady=(12, 0))
+
     def atualizar_opcoes_correcao(*_):
         if _normalize_key(metodo_var.get()) == 'correcao':
             correcao_label.grid(row=1, column=0, sticky='w', pady=3)
@@ -283,6 +292,11 @@ def montar_aba_adubacao(tabhost: TabHost, heading_font, ctx: AppContext):
     metodo_box.configure(command=lambda _: (atualizar_opcoes_correcao(), aplicar_metodo_adubacao(ctx)))
     correcao_box.configure(command=lambda _: aplicar_metodo_adubacao(ctx))
     atualizar_opcoes_correcao()
+
+    if logo_image is not None:
+        logo_label = ctk.CTkLabel(aba, image=logo_image, text='')
+        logo_label.pack(anchor='se', padx=12, pady=12)
+        logo_label.image = logo_image
 
     return {
         'summary': summary_vars,
@@ -397,7 +411,7 @@ def atualizar_adubacao(ctx: AppContext):
     controles['ultimo_resultado'] = resultado
 
     if status_var is not None:
-        status_var.set('Resultados atualizados. Defina a adubação conforme o método selecionado.')
+        status_var.set('Defina a adubação conforme o método selecionado.')
 
     aplicar_metodo_adubacao(ctx)
 
@@ -496,7 +510,7 @@ def main():
     ctk.set_appearance_mode('dark')
     janela = ctk.CTk()
     janela.title('Fertisoja')
-    largura, altura = 840, 650
+    largura, altura = 1040, 650
     pos_x = (janela.winfo_screenwidth() // 2) - (largura // 2)
     pos_y = (janela.winfo_screenheight() // 2) - (altura // 2)
     janela.geometry(f"{largura}x{altura}+{pos_x}+{pos_y}")
@@ -620,20 +634,23 @@ def main():
 
     rodape = ctk.CTkFrame(aba_entrada, fg_color='transparent')
     rodape.grid(row=1, column=0, sticky='ew', padx=16, pady=(8, 16))
-    rodape.grid_columnconfigure(0, weight=0)
-    rodape.grid_columnconfigure(1, weight=1)
-    ctk.CTkButton(rodape, text='Calcular', command=executar_calculo_principal).grid(row=0, column=0, pady=0)
-    ctk.CTkLabel(rodape, textvariable=status_var, text_color='#57C17A').grid(row=0, column=1, sticky='w', padx=(12, 0))
+    rodape.grid_columnconfigure(0, weight=1)
+    botao_calcular = ctk.CTkButton(rodape, text='Calcular', command=executar_calculo_principal)
+    botao_calcular.grid(row=0, column=0, pady=(0, 4), padx=0)
+    ctk.CTkLabel(rodape, textvariable=status_var, text_color='#57C17A', anchor='center').grid(row=1, column=0, sticky='n', padx=0)
 
+    logo_image = None
     logo_path = Path(__file__).resolve().parent / 'assets' / 'logo.png'
     try:
         imagem = Image.open(logo_path)
-        max_w = 220
+        max_w = 120
         if imagem.width > max_w:
             ratio = max_w / imagem.width
             imagem = imagem.resize((int(imagem.width * ratio), int(imagem.height * ratio)), Image.LANCZOS)
-        logo = ctk.CTkImage(light_image=imagem, dark_image=imagem, size=(imagem.width, imagem.height))
-        ctk.CTkLabel(col_dir, image=logo, text='').pack(anchor='ne')
+        logo_image = ctk.CTkImage(light_image=imagem, dark_image=imagem, size=(imagem.width, imagem.height))
+        logo_label = ctk.CTkLabel(col_dir, image=logo_image, text='')
+        logo_label.pack(anchor='ne')
+        logo_label.image = logo_image
     except Exception:
         ctk.CTkLabel(col_dir, text='(imagem não carregada)').pack(anchor='ne')
 
@@ -647,6 +664,8 @@ def main():
         calcular=calculo.calcular,
     )
 
+    ctx.logo_image = logo_image
+
     def adicionar_aba_modulo(nome_modulo: str):
         try:
             modulo = import_module(nome_modulo)
@@ -658,11 +677,11 @@ def main():
             return add_tab(tabhost, ctx)
         return None
 
-    ctx.condicoes_controls = montar_aba_condicoes(tabhost, heading_font, labels_classificacao)
+    ctx.condicoes_controls = montar_aba_condicoes(tabhost, heading_font, labels_classificacao, logo_image)
 
     adicionar_aba_modulo('tabs.recomendacao_calcario')
 
-    ctx.adubacao_controls = montar_aba_adubacao(tabhost, heading_font, ctx)
+    ctx.adubacao_controls = montar_aba_adubacao(tabhost, heading_font, ctx, logo_image)
 
     adicionar_aba_modulo('tabs.fertilizacao')
     adicionar_aba_modulo('tabs.mapa_area')
