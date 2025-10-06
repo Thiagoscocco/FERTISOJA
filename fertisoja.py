@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import unicodedata
 from pathlib import Path
+from importlib import import_module
 
 import customtkinter as ctk
 from PIL import Image
 
 from core.fonts import aplicar_fonte_global
-from core.context import AppContext, TabHost, carregar_abas_externas
+from core.context import AppContext, TabHost
 from core import calculo, diagnostico
 from core.adubacao_dados import EntradaSoja, recomendar_adubacao_soja
 
@@ -313,6 +314,10 @@ def atualizar_adubacao(ctx: AppContext):
 
     controles['ultimo_resultado'] = None
 
+    atualiza_fert = getattr(ctx, 'atualizar_fertilizacao', None)
+    if callable(atualiza_fert):
+        atualiza_fert()
+
     for var in summary_vars.values():
         var.set('-')
     for var in resultado_metodo.values():
@@ -419,6 +424,9 @@ def aplicar_metodo_adubacao(ctx: AppContext):
     if resultado is None:
         if recomendacao_var is not None:
             recomendacao_var.set('Recomendações técnicas: calcule as necessidades primeiro.')
+        atualiza_fert = getattr(ctx, 'atualizar_fertilizacao', None)
+        if callable(atualiza_fert):
+            atualiza_fert()
         return
 
     metodo_key = _normalize_key(metodo_var.get() or '')
@@ -479,6 +487,10 @@ def aplicar_metodo_adubacao(ctx: AppContext):
         texto = 'Recomendações técnicas:\n' + '\n'.join(f'- {msg}' for msg in mensagens)
         recomendacao_var.set(texto)
 
+    atualiza_fert = getattr(ctx, 'atualizar_fertilizacao', None)
+    if callable(atualiza_fert):
+        atualiza_fert()
+
 
 def main():
     ctk.set_appearance_mode('dark')
@@ -499,8 +511,23 @@ def main():
     labels_classificacao = calculo.labels_classificacao
     labels_resultado = calculo.labels_resultado
 
-    tabview = ctk.CTkTabview(janela)
-    tabview.pack(fill='both', expand=True, padx=16, pady=16)
+    tab_container = ctk.CTkFrame(janela, fg_color='transparent')
+    tab_container.pack(fill='both', expand=True, padx=16, pady=16)
+
+    tabview = ctk.CTkTabview(tab_container)
+    tabview.pack(fill='both', expand=True)
+
+    tab_scroll = ctk.CTkScrollbar(tab_container, orientation='horizontal', command=tabview._segmented_button._canvas.xview)
+    tab_scroll.pack(fill='x', pady=(6, 0))
+    tabview._segmented_button._canvas.configure(xscrollcommand=tab_scroll.set)
+
+    def _scroll_tabs(event):
+        passo = -1 if event.delta > 0 else 1
+        tabview._segmented_button._canvas.xview_scroll(passo, 'units')
+        return 'break'
+
+    tabview._segmented_button._canvas.bind('<Shift-MouseWheel>', _scroll_tabs)
+
     tabhost = TabHost(tabview)
 
     aba_entrada = tabhost.add_tab('Dados da análise de Solo')
@@ -586,6 +613,9 @@ def main():
             status_var.set('Cálculo atualizado com sucesso.')
             atualizar_condicoes(ctx)
             atualizar_adubacao(ctx)
+            atualiza_fert = getattr(ctx, 'atualizar_fertilizacao', None)
+            if callable(atualiza_fert):
+                atualiza_fert()
             janela.after(4000, lambda: status_var.set(''))
 
     rodape = ctk.CTkFrame(aba_entrada, fg_color='transparent')
@@ -617,11 +647,26 @@ def main():
         calcular=calculo.calcular,
     )
 
+    def adicionar_aba_modulo(nome_modulo: str):
+        try:
+            modulo = import_module(nome_modulo)
+        except Exception as exc:
+            print(f"[WARN] Falha ao carregar aba '{nome_modulo}': {exc}")
+            return None
+        add_tab = getattr(modulo, 'add_tab', None)
+        if callable(add_tab):
+            return add_tab(tabhost, ctx)
+        return None
+
     ctx.condicoes_controls = montar_aba_condicoes(tabhost, heading_font, labels_classificacao)
 
-    carregar_abas_externas(tabhost, ctx)
+    adicionar_aba_modulo('tabs.recomendacao_calcario')
 
     ctx.adubacao_controls = montar_aba_adubacao(tabhost, heading_font, ctx)
+
+    adicionar_aba_modulo('tabs.fertilizacao')
+    adicionar_aba_modulo('tabs.mapa_area')
+
     atualizar_condicoes(ctx)
     atualizar_adubacao(ctx)
 
