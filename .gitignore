@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Ambientes
+.venv/
+venv/
+.env
+
+# IDE/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Dados/saídas locais (ajuste se precisar versionar algo)
+data/
+outputs/
+*.csv
+*.xlsx
+*.parquet
+*.ipynb_checkpoints
+
+# Logs
+*.log
