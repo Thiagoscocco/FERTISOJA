@@ -148,11 +148,11 @@ def prob_resposta_por_classe(classe: str) -> str:
 def alertas_micros(pH_H2O: Optional[float], mo_percent: Optional[float], argila_percent: Optional[float]) -> List[str]:
     alertas: List[str] = []
     if mo_percent is not None and mo_percent < 2.0 and argila_percent is not None and argila_percent < 20:
-        alertas.append("Matéria orgânica baixa: atenção para B em solos arenosos")
+        alertas.append("MATÉRIA ORGÃNICA BAIXA: atenção para B em solos arenosos")
     if pH_H2O is not None and pH_H2O < PH_BAIXO_ALERTA:
-        alertas.append("pH baixo: risco de deficiência de Mo e B")
+        alertas.append("PH BAIXO: risco de deficiência de Mo e B")
     if pH_H2O is not None and pH_H2O > PH_ALTO_ALERTA:
-        alertas.append("pH alto: risco de deficiência de Zn, Cu, Fe e Mn")
+        alertas.append("PH ALTO: risco de deficiência de Zn, Cu, Fe e Mn")
     return alertas
 
 

@@ -236,8 +236,16 @@ def calcular():
                 except Exception:
                     pass
 
+        # Mapeamento das classes de argila para classificação do solo
+        classificacao_solo = {
+            1: 'muito argilosa',
+            2: 'argilosa', 
+            3: 'média',
+            4: 'arenosa'
+        }
+        
         classificacoes = {
-            'Classe do teor de Argila': f"Classe {classe_argila}",
+            'Classe do teor de Argila': f"Classe {classe_argila} ({classificacao_solo.get(classe_argila, '')})",
             'CTC': class_ctc,
             'M.O.': class_mo,
             'Fósforo (P)': class_p,
@@ -259,6 +267,6 @@ def calcular():
                     pass
         return True
     except Exception as exc:
-        messagebox.showerror('Erro', f"Entrada invÃ¡lida: {exc}")
+        messagebox.showerror('Erro', f"Entrada inválida: {exc}")
         return False
 
