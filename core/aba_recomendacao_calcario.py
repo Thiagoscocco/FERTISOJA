@@ -120,7 +120,7 @@ def add_tab(tabhost, ctx):
         ('Modo de aplicação:', 'mode'),
         ('Época sugerida:', 'epoca'),
         ('Tipo de corretivo:', 'tipo'),
-        ('Recomendações técnicas:', 'tecnica'),
+        ('RECOMENDAÇÕES TÉCNICAS:', 'tecnica'),
     ]
     for idx, (rotulo, chave) in enumerate(summary_rows):
         ctk.CTkLabel(sec_summary, text=rotulo, font=body_font).grid(row=idx, column=0, sticky='w', pady=2)

@@ -143,7 +143,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
     rodape = ctk.CTkFrame(aba_entrada, fg_color='transparent')
     rodape.grid(row=1, column=0, sticky='ew', padx=16, pady=(8, 16))
     rodape.grid_columnconfigure(0, weight=1)
-    ctk.CTkButton(rodape, text='Calcular', command=executar_calculo_principal).grid(row=0, column=0, pady=(0, 4), padx=0)
+    ctk.CTkButton(rodape, text='CALCULAR', command=executar_calculo_principal).grid(row=0, column=0, pady=(0, 4), padx=0)
     ctk.CTkLabel(rodape, textvariable=status_var, text_color='#57C17A', anchor='center').grid(row=1, column=0, sticky='n', padx=0)
 
     logo_image = None

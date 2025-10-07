@@ -37,7 +37,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
         ctk.CTkLabel(sec_summary, text=rotulo, font=bold_font).grid(row=idx, column=0, sticky='w', pady=3)
         ctk.CTkLabel(sec_summary, textvariable=summary_vars[chave], font=body_font, anchor='w').grid(row=idx, column=1, sticky='w', pady=3)
 
-    status_var = ctk.StringVar(value='Informe os dados da análise de solo e calcule para gerar as necessidades.')
+    status_var = ctk.StringVar(value='')
     ctk.CTkLabel(outer, textvariable=status_var, font=body_font, anchor='w', justify='left', wraplength=520).pack(fill='x', pady=(12, 0))
 
     metodo_section = make_section(outer, 'DEFINIR ADUBAÇÃO', heading_font)
@@ -63,8 +63,9 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
     ctk.CTkLabel(metodo_section, text='K2O (kg/ha):', font=bold_font).grid(row=3, column=0, sticky='w', pady=3)
     ctk.CTkLabel(metodo_section, textvariable=resultado_metodo['K'], font=body_font, anchor='w').grid(row=3, column=1, sticky='w', pady=3, columnspan=2)
 
-    recomendacao_var = ctk.StringVar(value='Recomendações técnicas: -')
-    ctk.CTkLabel(metodo_section, textvariable=recomendacao_var, font=body_font, anchor='w', justify='left', wraplength=520).grid(row=4, column=0, columnspan=3, sticky='w', pady=(8, 0))
+    recomendacao_section = make_section(outer, 'RECOMENDAÇÕES TÉCNICAS', heading_font)
+    recomendacao_var = ctk.StringVar(value='')
+    ctk.CTkLabel(recomendacao_section, textvariable=recomendacao_var, font=body_font, anchor='w', justify='left', wraplength=520).pack(fill='x', pady=(0, 0))
 
     ctk.CTkButton(outer, text='DEFINIR ADUBAÇÃO', command=lambda: aplicar_metodo(ctx)).pack(pady=(12, 0))
 
@@ -91,6 +92,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
         'metodo': metodo_var,
         'resultado_metodo': resultado_metodo,
         'recomendacao': recomendacao_var,
+        'recomendacao_section': recomendacao_section,
         'ultimo_resultado': None,
         'correcao_var': correcao_var,
         'correcao_label': correcao_label,
@@ -124,10 +126,10 @@ def atualizar(ctx: AppContext):
     for var in resultado_metodo.values():
         var.set('-')
     if recomendacao_var is not None:
-        recomendacao_var.set('Recomendações técnicas: -')
+        recomendacao_var.set('')
 
     if status_var is not None:
-        status_var.set('Informe os dados da análise de solo e calcule para gerar as necessidades.')
+        status_var.set('')
 
     if metodo_var is not None and correcao_var is not None:
         if normalize_key(metodo_var.get()) != 'correcao':
@@ -186,7 +188,7 @@ def atualizar(ctx: AppContext):
         if status_var is not None:
             status_var.set(f'Erro ao calcular adubação: {exc}')
         if recomendacao_var is not None:
-            recomendacao_var.set('Recomendações técnicas: -')
+            recomendacao_var.set('')
         return
 
     totais = resultado.totais
@@ -196,10 +198,6 @@ def atualizar(ctx: AppContext):
     summary_vars['Mo'].set('Dispensado' if totais['Mo_g_ha'] == 0 else f"{totais['Mo_g_ha']:.0f} g/ha")
 
     controles['ultimo_resultado'] = resultado
-
-    if status_var is not None:
-        status_var.set('Defina a adubação conforme o método selecionado.')
-
     aplicar_metodo(ctx)
 
 
@@ -221,11 +219,11 @@ def aplicar_metodo(ctx: AppContext):
         var.set('-')
 
     if recomendacao_var is not None:
-        recomendacao_var.set('Recomendações técnicas: -')
+        recomendacao_var.set('')
 
     if resultado is None:
         if recomendacao_var is not None:
-            recomendacao_var.set('Recomendações técnicas: calcule as necessidades primeiro.')
+            recomendacao_var.set('Calcule as necessidades primeiro.')
         atualiza_fert = getattr(ctx, 'atualizar_fertilizacao', None)
         if callable(atualiza_fert):
             atualiza_fert()
@@ -286,7 +284,7 @@ def aplicar_metodo(ctx: AppContext):
     resultado_metodo['K'].set(texto_k)
 
     if recomendacao_var is not None:
-        texto = 'Recomendações técnicas:\n' + '\n'.join(f'- {msg}' for msg in mensagens)
+        texto = '\n'.join(f'{msg.capitalize()}' for msg in mensagens)
         recomendacao_var.set(texto)
 
     atualiza_fert = getattr(ctx, 'atualizar_fertilizacao', None)
