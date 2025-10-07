@@ -50,9 +50,6 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
     metodo_box = ctk.CTkComboBox(metodo_section, values=['Correção', 'Manutenção', 'Reposição'], variable=metodo_var, state='readonly', width=160)
     metodo_box.grid(row=0, column=1, sticky='w', padx=(0, 8))
 
-    definir_btn = ctk.CTkButton(metodo_section, text='Definir adubação', width=140, command=lambda: aplicar_metodo(ctx))
-    definir_btn.grid(row=0, column=2, sticky='w')
-
     correcao_var = ctk.StringVar(value='Correção total')
     correcao_label = ctk.CTkLabel(metodo_section, text='Tipo de correção:', font=bold_font)
     correcao_box = ctk.CTkComboBox(metodo_section, values=['Correção total', 'Duas safras'], variable=correcao_var, state='readonly', width=160)
@@ -69,7 +66,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
     recomendacao_var = ctk.StringVar(value='Recomendações técnicas: -')
     ctk.CTkLabel(metodo_section, textvariable=recomendacao_var, font=body_font, anchor='w', justify='left', wraplength=520).grid(row=4, column=0, columnspan=3, sticky='w', pady=(8, 0))
 
-    ctk.CTkButton(outer, text='Definir adubação', command=lambda: aplicar_metodo(ctx)).pack(pady=(12, 0))
+    ctk.CTkButton(outer, text='DEFINIR ADUBAÇÃO', command=lambda: aplicar_metodo(ctx)).pack(pady=(12, 0))
 
     def atualizar_opcoes_correcao(*_):
         if normalize_key(metodo_var.get()) == 'correcao':
@@ -94,7 +91,6 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
         'metodo': metodo_var,
         'resultado_metodo': resultado_metodo,
         'recomendacao': recomendacao_var,
-        'definir_button': definir_btn,
         'ultimo_resultado': None,
         'correcao_var': correcao_var,
         'correcao_label': correcao_label,
