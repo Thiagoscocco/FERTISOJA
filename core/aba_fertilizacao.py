@@ -16,15 +16,17 @@ from fertilizacao import (
     obter_fosfatado_por_nome,
     obter_potassico_por_nome,
 )
+from .design_constants import *
 
 
 def make_section(parent, title: str, font: ctk.CTkFont):
-    wrapper = ctk.CTkFrame(parent, fg_color='transparent')
-    wrapper.pack(fill='x', pady=(8, 0))
-    header = ctk.CTkLabel(wrapper, text=title, font=font, anchor='w')
-    header.pack(anchor='w', padx=10, pady=(10, 6))
+    wrapper = ctk.CTkFrame(parent, fg_color=(PANEL_LIGHT, PANEL_DARK))
+    wrapper.pack(fill='x', pady=(PADY_SMALL, 0))
+    header = ctk.CTkLabel(wrapper, text=title, font=font, anchor='w', 
+                         text_color=(TEXT_PRIMARY, "#4a9eff"))
+    header.pack(anchor='w', padx=PADX_STANDARD, pady=(PADY_STANDARD, PADY_SMALL))
     body = ctk.CTkFrame(wrapper, fg_color='transparent')
-    body.pack(fill='both', expand=True, padx=10, pady=(0, 10))
+    body.pack(fill='both', expand=True, padx=PADX_STANDARD, pady=(0, PADY_STANDARD))
     return wrapper, body
 
 
@@ -211,9 +213,9 @@ def add_tab(tabhost, ctx):
 
     logo_image = getattr(ctx, 'logo_image', None)
 
-    aba = tabhost.add_tab('Escolha dos Fertilizantes')
+    aba = tabhost.add_tab('🌿 Escolha dos Fertilizantes')
     outer = ctk.CTkScrollableFrame(aba, fg_color='transparent')
-    outer.pack(fill='both', expand=True, padx=16, pady=16)
+    outer.pack(fill='both', expand=True, padx=PADX_STANDARD, pady=PADY_STANDARD)
 
     modo_wrapper, modo_body = make_section(outer, 'CONFIGURAÇÃO', heading_font)
     modo_body.grid_columnconfigure(1, weight=1)

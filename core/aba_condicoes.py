@@ -5,18 +5,21 @@ import re
 
 from .context import AppContext, TabHost
 from . import diagnostico
-from .ui import make_section, add_value_row, coletar_diagnostico_entradas
+from .ui import make_section, add_value_row, coletar_diagnostico_entradas, create_label
+from .design_constants import *
 
 
 def _criar_alerta_widgets(container, alertas, body_font, bold_font):
-    """Cria widgets individuais para cada alerta com formatação adequada."""
+    """Cria widgets individuais para cada alerta com formatação adequada seguindo o design guide."""
     # Limpa widgets existentes
     for widget in container.winfo_children():
         widget.destroy()
     
     if not alertas:
-        label = ctk.CTkLabel(container, text='Nenhum alerta específico identificado.', font=body_font, anchor='w', justify='left', wraplength=520, text_color='#F4B942')
-        label.pack(fill='x', pady=2)
+        label = create_label(container, 'Nenhum alerta específico identificado.', 
+                           font_size=FONT_SIZE_BODY, weight='normal')
+        label.configure(anchor='w', justify='left', wraplength=520, text_color=WARNING_ORANGE)
+        label.pack(fill='x', pady=PADY_SMALL)
         return
     
     for alerta in alertas:
@@ -33,45 +36,50 @@ def _criar_alerta_widgets(container, alertas, body_font, bold_font):
             
             # Cria um frame para o alerta
             alerta_frame = ctk.CTkFrame(container, fg_color='transparent')
-            alerta_frame.pack(fill='x', pady=2)
+            alerta_frame.pack(fill='x', pady=PADY_SMALL)
             
             # Label em negrito para a parte em maiúscula
-            bold_label = ctk.CTkLabel(alerta_frame, text=f"{uppercase_part}:", font=bold_font, text_color='#F4B942')
+            bold_label = create_label(alerta_frame, f"{uppercase_part}:", 
+                                    font_size=FONT_SIZE_BODY, weight='bold')
+            bold_label.configure(text_color=WARNING_ORANGE)
             bold_label.pack(side='left')
             
             # Label normal para o resto do texto
-            normal_label = ctk.CTkLabel(alerta_frame, text=f" {rest_of_text}", font=body_font, text_color='#F4B942', anchor='w', justify='left', wraplength=520)
+            normal_label = create_label(alerta_frame, f" {rest_of_text}", 
+                                      font_size=FONT_SIZE_BODY, weight='normal')
+            normal_label.configure(text_color=WARNING_ORANGE, anchor='w', justify='left', wraplength=520)
             normal_label.pack(side='left', fill='x', expand=True)
         else:
             # Se não há padrão de maiúscula, cria um label simples
-            label = ctk.CTkLabel(container, text=alerta, font=body_font, anchor='w', justify='left', wraplength=520, text_color='#F4B942')
-            label.pack(fill='x', pady=2)
+            label = create_label(container, alerta, font_size=FONT_SIZE_BODY, weight='normal')
+            label.configure(anchor='w', justify='left', wraplength=520, text_color=WARNING_ORANGE)
+            label.pack(fill='x', pady=PADY_SMALL)
 
 
 def add_tab(tabhost: TabHost, ctx: AppContext):
-    heading_font = getattr(ctx, 'heading_font', ctk.CTkFont(size=13, weight='bold'))
+    heading_font = getattr(ctx, 'heading_font', ctk.CTkFont(size=FONT_SIZE_HEADING, weight='bold'))
 
-    aba = tabhost.add_tab('Condições do Solo')
+    aba = tabhost.add_tab('🌍 Condições do Solo')
     outer = ctk.CTkScrollableFrame(aba, fg_color='transparent')
-    outer.pack(fill='both', expand=True, padx=16, pady=16)
+    outer.pack(fill='both', expand=True, padx=PADX_STANDARD, pady=PADY_STANDARD)
     outer.grid_columnconfigure(0, weight=1)
 
-    sec_prop = make_section(outer, 'PROPRIEDADES GERAIS DO SOLO', heading_font)
+    sec_prop = make_section(outer, '🏗️ PROPRIEDADES GERAIS DO SOLO', heading_font)
     for nome in ['Classe do teor de Argila', 'CTC', 'M.O.']:
         add_value_row(sec_prop, nome, ctx.labels_classificacao)
 
-    sec_macro = make_section(outer, 'MACRONUTRIENTES', heading_font)
+    sec_macro = make_section(outer, '🌿 MACRONUTRIENTES', heading_font)
     for nome in ['Fósforo (P)', 'Potássio (K)', 'Cálcio (Ca)', 'Magnésio (Mg)', 'Enxofre (S)']:
         add_value_row(sec_macro, nome, ctx.labels_classificacao)
 
-    sec_micro = make_section(outer, 'MICRONUTRIENTES', heading_font)
+    sec_micro = make_section(outer, '⚗️ MICRONUTRIENTES', heading_font)
     for nome in ['Zinco (Zn)', 'Cobre (Cu)', 'Boro (B)', 'Manganês (Mn)']:
         add_value_row(sec_micro, nome, ctx.labels_classificacao)
 
-    body_font = ctk.CTkFont(size=11)
-    bold_font = ctk.CTkFont(size=11, weight='bold')
+    body_font = ctk.CTkFont(size=FONT_SIZE_SMALL)
+    bold_font = ctk.CTkFont(size=FONT_SIZE_SMALL, weight='bold')
 
-    resumo_section = make_section(outer, 'RESUMO DO DIAGNÓSTICO', heading_font)
+    resumo_section = make_section(outer, '📋 RESUMO DO DIAGNÓSTICO', heading_font)
     resumo_section.grid_columnconfigure(0, weight=0)
     resumo_section.grid_columnconfigure(1, weight=1)
     summary_vars = {
@@ -85,16 +93,18 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
         ('Recomendação:', 'tecnica'),
     ]
     for idx, (rotulo, chave) in enumerate(resumo_rows):
-        ctk.CTkLabel(resumo_section, text=rotulo, font=bold_font).grid(row=idx, column=0, sticky='w', pady=2)
-        ctk.CTkLabel(resumo_section, textvariable=summary_vars[chave], font=body_font, anchor='w', justify='left').grid(row=idx, column=1, sticky='w', pady=2)
+        create_label(resumo_section, rotulo, font_size=FONT_SIZE_SMALL, weight='bold').grid(row=idx, column=0, sticky='w', pady=PADY_SMALL)
+        value_label = create_label(resumo_section, '', font_size=FONT_SIZE_SMALL, weight='normal')
+        value_label.configure(textvariable=summary_vars[chave], anchor='w', justify='left')
+        value_label.grid(row=idx, column=1, sticky='w', pady=PADY_SMALL)
 
-    alertas_section = make_section(outer, 'ALERTAS', heading_font)
+    alertas_section = make_section(outer, '⚠️ ALERTAS', heading_font)
     alertas_container = ctk.CTkFrame(alertas_section, fg_color='transparent')
     alertas_container.pack(fill='x')
 
     if getattr(ctx, 'logo_image', None) is not None:
         logo_label = ctk.CTkLabel(aba, image=ctx.logo_image, text='')
-        logo_label.pack(anchor='se', padx=12, pady=12)
+        logo_label.pack(anchor='se', padx=PADX_STANDARD, pady=PADY_STANDARD)
         logo_label.image = ctx.logo_image
 
     ctx.condicoes_controls = {
@@ -131,8 +141,8 @@ def atualizar(ctx: AppContext):
     else:
         summary['tecnica'].set(' Repetir a análise na próxima safra para monitoramento.')
 
-    body_font = ctk.CTkFont(size=11)
-    bold_font = ctk.CTkFont(size=11, weight='bold')
+    body_font = ctk.CTkFont(size=FONT_SIZE_SMALL)
+    bold_font = ctk.CTkFont(size=FONT_SIZE_SMALL, weight='bold')
     _criar_alerta_widgets(controles['alertas_container'], alertas, body_font, bold_font)
 
 

@@ -11,6 +11,7 @@ from core.calagem_dados import (
     lime_dose_from_V,
     lime_dose_from_polynomial,
 )
+from .design_constants import *
 
 PH_THRESHOLD_NEED = 5.5
 PH_SEVERE_PD = 5.2
@@ -34,12 +35,13 @@ def _f(value, default=None):
 
 
 def make_section(parent, title, font):
-    frame = ctk.CTkFrame(parent, fg_color='transparent')
-    frame.pack(fill='x', pady=(8, 0))
-    header = ctk.CTkLabel(frame, text=title, font=font, anchor='w')
-    header.pack(anchor='w', padx=10, pady=(10, 6))
+    frame = ctk.CTkFrame(parent, fg_color=(PANEL_LIGHT, PANEL_DARK))
+    frame.pack(fill='x', pady=(PADY_SMALL, 0))
+    header = ctk.CTkLabel(frame, text=title, font=font, anchor='w',
+                         text_color=(TEXT_PRIMARY, "#4a9eff"))
+    header.pack(anchor='w', padx=PADX_STANDARD, pady=(PADY_STANDARD, PADY_SMALL))
     body = ctk.CTkFrame(frame, fg_color='transparent')
-    body.pack(fill='both', expand=True, padx=10, pady=(0, 10))
+    body.pack(fill='both', expand=True, padx=PADX_STANDARD, pady=(0, PADY_STANDARD))
     return body
 
 
@@ -49,9 +51,9 @@ def add_tab(tabhost, ctx):
 
     logo_image = getattr(ctx, 'logo_image', None)
 
-    aba = tabhost.add_tab('Recomendação de Calcário')
+    aba = tabhost.add_tab('🪨 Recomendação de Calcário')
     outer = ctk.CTkScrollableFrame(aba, fg_color='transparent')
-    outer.pack(fill='both', expand=True, padx=16, pady=16)
+    outer.pack(fill='both', expand=True, padx=PADX_STANDARD, pady=PADY_STANDARD)
     outer.grid_columnconfigure(0, weight=1)
 
     sec_inputs = make_section(outer, 'Parâmetros complementares', heading_font)

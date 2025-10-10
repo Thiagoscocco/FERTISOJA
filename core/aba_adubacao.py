@@ -3,21 +3,23 @@ from __future__ import annotations
 import customtkinter as ctk
 
 from .context import AppContext, TabHost
-from .ui import make_section, parse_float, normalize_key
+from .ui import (make_section, parse_float, normalize_key, create_fertilizer_button, 
+                create_label, create_entry_field)
+from .design_constants import *
 from .adubacao_dados import EntradaSoja, recomendar_adubacao_soja
 
 
 def add_tab(tabhost: TabHost, ctx: AppContext):
-    heading_font = getattr(ctx, 'heading_font', ctk.CTkFont(size=13, weight='bold'))
-    body_font = ctk.CTkFont(size=11)
-    bold_font = ctk.CTkFont(size=11, weight='bold')
+    heading_font = getattr(ctx, 'heading_font', ctk.CTkFont(size=FONT_SIZE_HEADING, weight='bold'))
+    body_font = ctk.CTkFont(size=FONT_SIZE_BODY)
+    bold_font = ctk.CTkFont(size=FONT_SIZE_BODY, weight='bold')
 
-    aba = tabhost.add_tab('Recomendação de Adubação')
+    aba = tabhost.add_tab('🌱 Recomendação de Adubação')
     outer = ctk.CTkScrollableFrame(aba, fg_color='transparent')
-    outer.pack(fill='both', expand=True, padx=16, pady=16)
+    outer.pack(fill='both', expand=True, padx=PADX_STANDARD, pady=PADY_STANDARD)
     outer.grid_columnconfigure(0, weight=1)
 
-    sec_summary = make_section(outer, 'NECESSIDADES DE NUTRIENTES', heading_font)
+    sec_summary = make_section(outer, '🧪 NECESSIDADES DE NUTRIENTES', heading_font)
     sec_summary.grid_columnconfigure(0, weight=0)
     sec_summary.grid_columnconfigure(1, weight=1)
 
@@ -34,45 +36,57 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
         ('Molibdênio (Mo):', 'Mo'),
     ]
     for idx, (rotulo, chave) in enumerate(summary_rows):
-        ctk.CTkLabel(sec_summary, text=rotulo, font=bold_font).grid(row=idx, column=0, sticky='w', pady=3)
-        ctk.CTkLabel(sec_summary, textvariable=summary_vars[chave], font=body_font, anchor='w').grid(row=idx, column=1, sticky='w', pady=3)
+        create_label(sec_summary, rotulo, font_size=FONT_SIZE_BODY, weight='bold').grid(row=idx, column=0, sticky='w', pady=PADY_SMALL)
+        value_label = create_label(sec_summary, '', font_size=FONT_SIZE_BODY, weight='normal')
+        value_label.configure(textvariable=summary_vars[chave], anchor='w')
+        value_label.grid(row=idx, column=1, sticky='w', pady=PADY_SMALL)
 
     status_var = ctk.StringVar(value='')
-    ctk.CTkLabel(outer, textvariable=status_var, font=body_font, anchor='w', justify='left', wraplength=520).pack(fill='x', pady=(12, 0))
+    status_label = create_label(outer, '', font_size=FONT_SIZE_BODY, weight='normal')
+    status_label.configure(textvariable=status_var, anchor='w', justify='left', wraplength=520)
+    status_label.pack(fill='x', pady=(PADY_STANDARD, 0))
 
-    metodo_section = make_section(outer, 'DEFINIR ADUBAÇÃO', heading_font)
+    metodo_section = make_section(outer, '⚙️ DEFINIR ADUBAÇÃO', heading_font)
     metodo_section.grid_columnconfigure(0, weight=0)
     metodo_section.grid_columnconfigure(1, weight=1)
     metodo_section.grid_columnconfigure(2, weight=0)
 
     metodo_var = ctk.StringVar(value='Correção')
-    ctk.CTkLabel(metodo_section, text='Método de adubação:', font=bold_font).grid(row=0, column=0, sticky='w', pady=3)
-    metodo_box = ctk.CTkComboBox(metodo_section, values=['Correção', 'Manutenção', 'Reposição'], variable=metodo_var, state='readonly', width=160)
-    metodo_box.grid(row=0, column=1, sticky='w', padx=(0, 8))
+    create_label(metodo_section, 'Método de adubação:', font_size=FONT_SIZE_BODY, weight='bold').grid(row=0, column=0, sticky='w', pady=PADY_SMALL)
+    metodo_box = ctk.CTkComboBox(metodo_section, values=['Correção', 'Manutenção', 'Reposição'], variable=metodo_var, state='readonly', width=BUTTON_WIDTH_PRIMARY)
+    metodo_box.grid(row=0, column=1, sticky='w', padx=(0, PADX_SMALL))
 
     correcao_var = ctk.StringVar(value='Correção total')
-    correcao_label = ctk.CTkLabel(metodo_section, text='Tipo de correção:', font=bold_font)
-    correcao_box = ctk.CTkComboBox(metodo_section, values=['Correção total', 'Duas safras'], variable=correcao_var, state='readonly', width=160)
+    correcao_label = create_label(metodo_section, 'Tipo de correção:', font_size=FONT_SIZE_BODY, weight='bold')
+    correcao_box = ctk.CTkComboBox(metodo_section, values=['Correção total', 'Duas safras'], variable=correcao_var, state='readonly', width=BUTTON_WIDTH_PRIMARY)
 
     resultado_metodo = {
         'P': ctk.StringVar(value='-'),
         'K': ctk.StringVar(value='-'),
     }
-    ctk.CTkLabel(metodo_section, text='P2O5 (kg/ha):', font=bold_font).grid(row=2, column=0, sticky='w', pady=3)
-    ctk.CTkLabel(metodo_section, textvariable=resultado_metodo['P'], font=body_font, anchor='w').grid(row=2, column=1, sticky='w', pady=3, columnspan=2)
-    ctk.CTkLabel(metodo_section, text='K2O (kg/ha):', font=bold_font).grid(row=3, column=0, sticky='w', pady=3)
-    ctk.CTkLabel(metodo_section, textvariable=resultado_metodo['K'], font=body_font, anchor='w').grid(row=3, column=1, sticky='w', pady=3, columnspan=2)
+    create_label(metodo_section, 'P2O5 (kg/ha):', font_size=FONT_SIZE_BODY, weight='bold').grid(row=2, column=0, sticky='w', pady=PADY_SMALL)
+    p_label = create_label(metodo_section, '', font_size=FONT_SIZE_BODY, weight='normal')
+    p_label.configure(textvariable=resultado_metodo['P'], anchor='w')
+    p_label.grid(row=2, column=1, sticky='w', pady=PADY_SMALL, columnspan=2)
+    create_label(metodo_section, 'K2O (kg/ha):', font_size=FONT_SIZE_BODY, weight='bold').grid(row=3, column=0, sticky='w', pady=PADY_SMALL)
+    k_label = create_label(metodo_section, '', font_size=FONT_SIZE_BODY, weight='normal')
+    k_label.configure(textvariable=resultado_metodo['K'], anchor='w')
+    k_label.grid(row=3, column=1, sticky='w', pady=PADY_SMALL, columnspan=2)
 
-    recomendacao_section = make_section(outer, 'RECOMENDAÇÕES TÉCNICAS', heading_font)
+    recomendacao_section = make_section(outer, '📋 RECOMENDAÇÕES TÉCNICAS', heading_font)
     recomendacao_var = ctk.StringVar(value='')
-    ctk.CTkLabel(recomendacao_section, textvariable=recomendacao_var, font=body_font, anchor='w', justify='left', wraplength=520).pack(fill='x', pady=(0, 0))
+    recomendacao_label = create_label(recomendacao_section, '', font_size=FONT_SIZE_BODY, weight='normal')
+    recomendacao_label.configure(textvariable=recomendacao_var, anchor='w', justify='left', wraplength=520)
+    recomendacao_label.pack(fill='x', pady=(0, 0))
 
-    ctk.CTkButton(outer, text='DEFINIR ADUBAÇÃO', command=lambda: aplicar_metodo(ctx)).pack(pady=(12, 0))
+    # Botão principal seguindo a memória do usuário - apenas o botão inferior
+    btn_definir = create_fertilizer_button(outer, '🌱 DEFINIR ADUBAÇÃO', lambda: aplicar_metodo(ctx))
+    btn_definir.pack(pady=(PADY_STANDARD, 0))
 
     def atualizar_opcoes_correcao(*_):
         if normalize_key(metodo_var.get()) == 'correcao':
-            correcao_label.grid(row=1, column=0, sticky='w', pady=3)
-            correcao_box.grid(row=1, column=1, sticky='w', padx=(0, 8))
+            correcao_label.grid(row=1, column=0, sticky='w', pady=PADY_SMALL)
+            correcao_box.grid(row=1, column=1, sticky='w', padx=(0, PADX_SMALL))
         else:
             correcao_label.grid_remove()
             correcao_box.grid_remove()
@@ -83,7 +97,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
 
     if getattr(ctx, 'logo_image', None) is not None:
         logo_label = ctk.CTkLabel(aba, image=ctx.logo_image, text='')
-        logo_label.pack(anchor='se', padx=12, pady=12)
+        logo_label.pack(anchor='se', padx=PADX_STANDARD, pady=PADY_STANDARD)
         logo_label.image = ctx.logo_image
 
     ctx.adubacao_controls = {

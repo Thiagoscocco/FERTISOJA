@@ -8,7 +8,9 @@ from PIL import Image
 from .fonts import aplicar_fonte_global
 from .context import AppContext, TabHost
 from . import calculo
-from .ui import make_section
+from .ui import (make_section, create_calc_button, create_entry_field, 
+                create_label, create_primary_button)
+from .design_constants import *
 from . import aba_condicoes, aba_adubacao
 
 
@@ -49,48 +51,53 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
     ctx.campos = campos
     ctx.calcular = calculo.calcular
 
-    aba_entrada = tabhost.add_tab('Dados da análise de Solo')
+    aba_entrada = tabhost.add_tab('📊 Dados da Análise de Solo')
+    
+    # Configuração do grid responsivo
     aba_entrada.grid_columnconfigure(0, weight=1)
     aba_entrada.grid_rowconfigure(0, weight=1)
     aba_entrada.grid_rowconfigure(1, weight=0)
 
     conteudo = ctk.CTkScrollableFrame(aba_entrada, fg_color='transparent')
-    conteudo.grid(row=0, column=0, sticky='nsew')
-    conteudo.grid_columnconfigure(0, weight=1)
-    conteudo.grid_columnconfigure(1, weight=0)
+    conteudo.grid(row=0, column=0, sticky='nsew', padx=PADX_STANDARD, pady=PADY_STANDARD)
+    conteudo.grid_columnconfigure(0, weight=2)  # Coluna principal
+    conteudo.grid_columnconfigure(1, weight=1)  # Coluna do logo
 
     col_esq = ctk.CTkFrame(conteudo, fg_color='transparent')
-    col_esq.grid(row=0, column=0, sticky='nwe')
+    col_esq.grid(row=0, column=0, sticky='nsew', padx=(0, PADX_STANDARD))
 
     col_dir = ctk.CTkFrame(conteudo, fg_color='transparent')
-    col_dir.grid(row=0, column=1, sticky='ne', padx=(20, 0))
+    col_dir.grid(row=0, column=1, sticky='ne', padx=(PADX_STANDARD, 0))
 
-    sec1 = make_section(col_esq, 'INFORMAÇÕES DA PRODUÇÃO', heading_font)
-    sec1.grid_columnconfigure(1, weight=1)
-    sec1.grid_columnconfigure(3, weight=1)
+    sec1 = make_section(col_esq, '🌱 INFORMAÇÕES DA PRODUÇÃO', heading_font)
+    sec1.grid_columnconfigure(0, weight=0)
+    sec1.grid_columnconfigure(1, weight=0)
+    sec1.grid_columnconfigure(2, weight=1)  # Espaçador
+    sec1.grid_columnconfigure(3, weight=0)
+    sec1.grid_columnconfigure(4, weight=0)
 
-    ctk.CTkLabel(sec1, text='Produtividade esperada (t/ha)').grid(row=0, column=0, sticky='w', pady=4)
-    entrada_prod = ctk.CTkEntry(sec1, width=120)
-    entrada_prod.grid(row=0, column=1, sticky='w', padx=6)
+    create_label(sec1, 'Produtividade esperada (t/ha)', weight='bold').grid(row=0, column=0, sticky='w', pady=PADY_SMALL)
+    entrada_prod = create_entry_field(sec1, width=ENTRY_WIDTH_STANDARD)
+    entrada_prod.grid(row=0, column=1, sticky='w', padx=PADX_MICRO)
     campos['Produtividade esperada'] = entrada_prod
     entrada_prod.insert(0, TEST_DEFAULTS.get('Produtividade esperada', ''))
 
-    ctk.CTkLabel(sec1, text='Área (ha)').grid(row=0, column=2, sticky='w', pady=4)
-    entrada_area = ctk.CTkEntry(sec1, width=100)
-    entrada_area.grid(row=0, column=3, sticky='w', padx=6)
+    create_label(sec1, 'Área (ha)', weight='bold').grid(row=0, column=3, sticky='w', pady=PADY_SMALL)
+    entrada_area = create_entry_field(sec1, width=ENTRY_WIDTH_SMALL)
+    entrada_area.grid(row=0, column=4, sticky='w', padx=PADX_MICRO)
     campos['Area (Ha)'] = entrada_area
     entrada_area.insert(0, TEST_DEFAULTS.get('Area (Ha)', ''))
 
-    ctk.CTkLabel(sec1, text='Cultivo').grid(row=1, column=0, sticky='w', pady=(6, 0))
+    create_label(sec1, 'Cultivo', weight='bold').grid(row=1, column=0, sticky='w', pady=(PADY_SMALL, 0))
     radio_frame = ctk.CTkFrame(sec1, fg_color='transparent')
-    radio_frame.grid(row=1, column=1, columnspan=3, sticky='w', pady=(6, 0))
-    ctk.CTkRadioButton(radio_frame, text='1º Cultivo', variable=cultivo_var, value='1º Cultivo').pack(side='left', padx=(0, 16))
+    radio_frame.grid(row=1, column=1, columnspan=4, sticky='w', pady=(PADY_SMALL, 0))
+    ctk.CTkRadioButton(radio_frame, text='1º Cultivo', variable=cultivo_var, value='1º Cultivo').pack(side='left', padx=(0, PADX_STANDARD))
     ctk.CTkRadioButton(radio_frame, text='2º Cultivo', variable=cultivo_var, value='2º Cultivo').pack(side='left')
 
-    sec2 = make_section(col_esq, 'CONDIÇÕES DO SOLO', heading_font)
+    sec2 = make_section(col_esq, '🌍 CONDIÇÕES DO SOLO', heading_font)
     sec2.grid_columnconfigure(0, weight=0)
     sec2.grid_columnconfigure(1, weight=0)
-    sec2.grid_columnconfigure(2, weight=1)
+    sec2.grid_columnconfigure(2, weight=1)  # Espaçador
     dados_sec2 = [
         ('Índice SMP', 'Indice SMP'),
         ('Argila (%)', 'Argila (%)'),
@@ -99,16 +106,16 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
         ('pH (água)', 'pH (Agua)'),
     ]
     for idx, (rotulo, chave) in enumerate(dados_sec2):
-        ctk.CTkLabel(sec2, text=rotulo).grid(row=idx, column=0, sticky='w', pady=4)
-        entrada = ctk.CTkEntry(sec2, width=120)
-        entrada.grid(row=idx, column=1, sticky='w', padx=2)
+        create_label(sec2, rotulo, weight='bold').grid(row=idx, column=0, sticky='w', pady=PADY_SMALL)
+        entrada = create_entry_field(sec2, width=ENTRY_WIDTH_STANDARD)
+        entrada.grid(row=idx, column=1, sticky='w', padx=PADX_MICRO)
         campos[chave] = entrada
         entrada.insert(0, TEST_DEFAULTS.get(chave, ''))
 
-    sec3 = make_section(col_esq, 'TEOR DE NUTRIENTES', heading_font)
+    sec3 = make_section(col_esq, '🧪 TEOR DE NUTRIENTES', heading_font)
     sec3.grid_columnconfigure(0, weight=0)
     sec3.grid_columnconfigure(1, weight=0)
-    sec3.grid_columnconfigure(2, weight=1)
+    sec3.grid_columnconfigure(2, weight=1)  # Espaçador
     dados_sec3 = [
         ('P (mg/dm³)', 'P (mg/dm3)'),
         ('K (mg/dm³)', 'K (mg/dm3)'),
@@ -121,9 +128,9 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
         ('Mn (mg/dm³)', 'Mn (mg/dm3)'),
     ]
     for idx, (rotulo, chave) in enumerate(dados_sec3):
-        ctk.CTkLabel(sec3, text=rotulo).grid(row=idx, column=0, sticky='w', pady=3)
-        entrada = ctk.CTkEntry(sec3, width=120)
-        entrada.grid(row=idx, column=1, sticky='w', padx=2)
+        create_label(sec3, rotulo, weight='bold').grid(row=idx, column=0, sticky='w', pady=PADY_SMALL)
+        entrada = create_entry_field(sec3, width=ENTRY_WIDTH_STANDARD)
+        entrada.grid(row=idx, column=1, sticky='w', padx=PADX_MICRO)
         campos[chave] = entrada
         entrada.insert(0, TEST_DEFAULTS.get(chave, ''))
 
@@ -141,10 +148,17 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
             janela.after(4000, lambda: status_var.set(''))
 
     rodape = ctk.CTkFrame(aba_entrada, fg_color='transparent')
-    rodape.grid(row=1, column=0, sticky='ew', padx=16, pady=(8, 16))
+    rodape.grid(row=1, column=0, sticky='ew', padx=PADX_STANDARD, pady=(PADY_SMALL, PADY_STANDARD))
     rodape.grid_columnconfigure(0, weight=1)
-    ctk.CTkButton(rodape, text='CALCULAR', command=executar_calculo_principal).grid(row=0, column=0, pady=(0, 4), padx=0)
-    ctk.CTkLabel(rodape, textvariable=status_var, text_color='#57C17A', anchor='center').grid(row=1, column=0, sticky='n', padx=0)
+    
+    # Botão de cálculo com novo estilo
+    btn_calcular = create_calc_button(rodape, '⚡ CALCULAR', executar_calculo_principal)
+    btn_calcular.grid(row=0, column=0, pady=(0, PADY_SMALL), padx=0)
+    
+    # Label de status com novo estilo
+    status_label = create_label(rodape, '', weight='bold')
+    status_label.configure(textvariable=status_var, text_color=SUCCESS_GREEN, anchor='center')
+    status_label.grid(row=1, column=0, sticky='n', padx=0)
 
     logo_image = None
     logo_path = Path(__file__).resolve().parent.parent / 'assets' / 'logo.png'
