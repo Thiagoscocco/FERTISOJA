@@ -20,12 +20,13 @@ from .design_constants import (
     PADX_STANDARD,
     PADY_SMALL,
     PADY_STANDARD,
+    PRIMARY_BLUE,
     TEXT_PRIMARY,
     TEXT_SECONDARY,
 )
 
 
-IGNORED_SUPPLEMENTS: set[str] = {GESSO_PADRAO.nome, MOLIBDATO_PADRAO.nome}
+SUPPLEMENT_NAMES: set[str] = {GESSO_PADRAO.nome, MOLIBDATO_PADRAO.nome}
 SACA_PESO_KG = 50.0
 FRAME_BORDER_COLOR = "#1f1f1f"
 
@@ -111,12 +112,7 @@ def _obter_calcario(ctx: AppContext) -> Dict[str, float | str]:
 
 
 def _selecionar_produtos(produtos: Sequence[Tuple[str, float]]) -> List[Tuple[str, float]]:
-    selecionados: List[Tuple[str, float]] = []
-    for nome, quantidade in produtos:
-        if nome in IGNORED_SUPPLEMENTS:
-            continue
-        selecionados.append((nome, quantidade))
-    return selecionados
+    return list(produtos)
 
 
 def _obter_fertilizantes(ctx: AppContext) -> Dict[str, object]:
@@ -131,7 +127,7 @@ def _obter_fertilizantes(ctx: AppContext) -> Dict[str, object]:
     produtos = _selecionar_produtos(produtos_base)
     alertas = list(getattr(resultado, "alertas", []) or [])
     faltantes = dict(getattr(resultado, "faltantes", {}) or {})
-    suplementos = [(nome, qtd) for nome, qtd in produtos_base if nome in IGNORED_SUPPLEMENTS]
+    suplementos = [(nome, qtd) for nome, qtd in produtos_base if nome in SUPPLEMENT_NAMES]
     return {
         "produtos": produtos,
         "suplementos": suplementos,
@@ -159,7 +155,7 @@ def _preencher_linhas(
     for idx, (rotulo, valor) in enumerate(itens):
         linha = ctk.CTkFrame(container, fg_color="transparent")
         sticky = "e" if align_right else "ew"
-        linha.grid(row=idx, column=0, sticky=sticky, padx=PADX_STANDARD, pady=(0, PADY_SMALL + 4))
+        linha.grid(row=idx, column=0, sticky=sticky, padx=PADX_STANDARD, pady=(PADY_SMALL, PADY_SMALL + 8))
         if align_right:
             linha.grid_columnconfigure(0, weight=1)
             linha.grid_columnconfigure(1, weight=0)
@@ -363,13 +359,23 @@ def atualizar(ctx: AppContext) -> None:
 
 def add_tab(tabhost: TabHost, ctx: AppContext):
     heading_font = getattr(ctx, "heading_font", ctk.CTkFont(size=FONT_SIZE_HEADING, weight="bold"))
-    label_font = ctk.CTkFont(size=FONT_SIZE_BODY + 1, weight="bold")
+    section_font = ctk.CTkFont(size=FONT_SIZE_HEADING + 1, weight="bold")
+    label_font = ctk.CTkFont(size=FONT_SIZE_BODY + 2, weight="bold")
     value_font = ctk.CTkFont(size=FONT_SIZE_BODY + 1)
 
     aba = tabhost.add_tab("Resultados")
     outer = ctk.CTkScrollableFrame(aba, fg_color="transparent")
     outer.pack(fill="both", expand=True, padx=PADX_STANDARD, pady=PADY_STANDARD)
     outer.grid_columnconfigure(0, weight=1)
+
+    titulo_global = ctk.CTkLabel(
+        outer,
+        text="RESULTADOS FINAIS",
+        font=section_font,
+        text_color=(TEXT_PRIMARY, "#4a9eff"),
+        anchor="center",
+    )
+    titulo_global.pack(fill="x", pady=(0, PADY_STANDARD))
 
     quadro_principal = ctk.CTkFrame(
         outer,
@@ -382,23 +388,30 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
     quadro_principal.grid_columnconfigure(0, weight=1)
     quadro_principal.grid_columnconfigure(1, weight=1)
 
-    titulo_ha = ctk.CTkLabel(
-        quadro_principal,
-        text="Por hectare",
-        font=heading_font,
-        text_color=(TEXT_PRIMARY, "#4a9eff"),
-        anchor="center",
-    )
-    titulo_ha.grid(row=0, column=0, sticky="ew", padx=PADX_STANDARD, pady=(PADY_STANDARD, PADY_SMALL))
+    def _add_title(parent: ctk.CTkFrame, column: int, texto: str, sticky_title: str) -> None:
+        container = ctk.CTkFrame(parent, fg_color="transparent")
+        container.grid(row=0, column=column, sticky=sticky_title, padx=PADX_STANDARD, pady=(PADY_STANDARD, PADY_SMALL))
+        container.grid_columnconfigure(0, weight=1)
+        container.grid_columnconfigure(1, weight=0)
+        container.grid_columnconfigure(2, weight=1)
 
-    titulo_total = ctk.CTkLabel(
-        quadro_principal,
-        text="Área total",
-        font=heading_font,
-        text_color=(TEXT_PRIMARY, "#4a9eff"),
-        anchor="center",
-    )
-    titulo_total.grid(row=0, column=1, sticky="ew", padx=PADX_STANDARD, pady=(PADY_STANDARD, PADY_SMALL))
+        barra_esq = ctk.CTkFrame(container, fg_color=PRIMARY_BLUE, height=4, corner_radius=2, width=50)
+        barra_esq.grid(row=0, column=0, sticky="ew", padx=(0, PADX_SMALL))
+        barra_esq.grid_propagate(False)
+        titulo_label = ctk.CTkLabel(
+            container,
+            text=texto,
+            font=heading_font,
+            text_color=(TEXT_PRIMARY, "#4a9eff"),
+            anchor="center",
+        )
+        titulo_label.grid(row=0, column=1, sticky="n")
+        barra_dir = ctk.CTkFrame(container, fg_color=PRIMARY_BLUE, height=4, corner_radius=2, width=50)
+        barra_dir.grid(row=0, column=2, sticky="ew", padx=(PADX_SMALL, 0))
+        barra_dir.grid_propagate(False)
+
+    _add_title(quadro_principal, 0, "POR HECTARE", "w")
+    _add_title(quadro_principal, 1, "ÁREA TOTAL", "e")
 
     unidade_ha = ctk.StringVar(value="kg")
     unidade_total = ctk.StringVar(value="kg")
@@ -409,7 +422,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
         variable=unidade_ha,
         command=lambda _: _render_per_area(ctx),
     )
-    unidade_ha_btn.grid(row=1, column=0, pady=(0, PADY_SMALL))
+    unidade_ha_btn.grid(row=1, column=0, pady=(0, PADY_SMALL), sticky="n")
 
     unidade_total_btn = ctk.CTkSegmentedButton(
         quadro_principal,
@@ -417,12 +430,12 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
         variable=unidade_total,
         command=lambda _: _render_total(ctx),
     )
-    unidade_total_btn.grid(row=1, column=1, pady=(0, PADY_SMALL))
+    unidade_total_btn.grid(row=1, column=1, pady=(0, PADY_SMALL), sticky="n")
 
     lista_ha = ctk.CTkFrame(quadro_principal, fg_color="transparent")
-    lista_ha.grid(row=2, column=0, sticky="nsew", padx=PADX_STANDARD, pady=(PADY_SMALL, PADY_STANDARD))
+    lista_ha.grid(row=2, column=0, sticky="nsew", padx=(PADX_STANDARD, PADX_SMALL), pady=(PADY_SMALL, PADY_STANDARD))
     lista_total = ctk.CTkFrame(quadro_principal, fg_color="transparent")
-    lista_total.grid(row=2, column=1, sticky="nsew", padx=PADX_STANDARD, pady=(PADY_SMALL, PADY_STANDARD))
+    lista_total.grid(row=2, column=1, sticky="nsew", padx=(PADX_SMALL, PADX_STANDARD), pady=(PADY_SMALL, PADY_STANDARD))
 
     quadro_recomendacoes = ctk.CTkFrame(
         outer,
@@ -435,23 +448,8 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
     quadro_recomendacoes.grid_columnconfigure(0, weight=1)
     quadro_recomendacoes.grid_columnconfigure(1, weight=1)
 
-    titulo_calcario = ctk.CTkLabel(
-        quadro_recomendacoes,
-        text="Calcário",
-        font=heading_font,
-        text_color=(TEXT_PRIMARY, "#4a9eff"),
-        anchor="center",
-    )
-    titulo_calcario.grid(row=0, column=0, sticky="ew", padx=PADX_STANDARD, pady=(PADY_STANDARD, PADY_SMALL))
-
-    titulo_fert = ctk.CTkLabel(
-        quadro_recomendacoes,
-        text="Fertilizantes",
-        font=heading_font,
-        text_color=(TEXT_PRIMARY, "#4a9eff"),
-        anchor="center",
-    )
-    titulo_fert.grid(row=0, column=1, sticky="ew", padx=PADX_STANDARD, pady=(PADY_STANDARD, PADY_SMALL))
+    _add_title(quadro_recomendacoes, 0, "CALCÁRIO", "w")
+    _add_title(quadro_recomendacoes, 1, "FERTILIZANTES", "e")
 
     calcario_txt = ctk.StringVar(value="Calcule a calagem para ver orientações.")
     fert_txt = ctk.StringVar(value="Configure os fertilizantes para ver orientações.")
@@ -461,22 +459,22 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
         textvariable=calcario_txt,
         font=value_font,
         text_color=TEXT_SECONDARY,
-        wraplength=360,
+        wraplength=420,
         justify="left",
         anchor="w",
     )
-    calcario_label.grid(row=1, column=0, sticky="nsew", padx=PADX_STANDARD, pady=(0, PADY_STANDARD))
+    calcario_label.grid(row=1, column=0, sticky="nsew", padx=PADX_STANDARD, pady=(PADY_SMALL, PADY_STANDARD))
 
     fert_label = ctk.CTkLabel(
         quadro_recomendacoes,
         textvariable=fert_txt,
         font=value_font,
         text_color=TEXT_SECONDARY,
-        wraplength=360,
+        wraplength=420,
         justify="right",
         anchor="e",
     )
-    fert_label.grid(row=1, column=1, sticky="nsew", padx=PADX_STANDARD, pady=(0, PADY_STANDARD))
+    fert_label.grid(row=1, column=1, sticky="nsew", padx=PADX_STANDARD, pady=(PADY_SMALL, PADY_STANDARD))
 
     controles = {
         "unidade_ha": unidade_ha,
