@@ -151,7 +151,7 @@ def _gerar_resultado(ctx, demanda: Dict[str, float], controles: Dict) -> Optiona
         return calcular_formulado(demanda, grade, nome_formulado)
 
     submodo = _normalize(controles['submodo_var'].get())
-    if submodo.startswith('escolha do usuário'):
+    if submodo.startswith('escolha do usuario'):
         fosfatado_sel = controles['fosfatado_var'].get()
         potassico_sel = controles['potassico_var'].get()
         fosfatado = obter_fosfatado_por_nome(fosfatado_sel)
