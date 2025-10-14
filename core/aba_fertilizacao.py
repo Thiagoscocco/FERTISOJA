@@ -171,6 +171,7 @@ def _executar_calculo(ctx, atualizar_status: bool = True) -> Optional[Fertilizac
     status_var = controles['status_var']
     resultado_var = controles['resultado_var']
     alerta_var = controles['alerta_var']
+    atualiza_res = getattr(ctx, 'atualizar_resultados', None)
 
     demanda, mensagem = _obter_demanda(ctx)
     if mensagem:
@@ -179,6 +180,8 @@ def _executar_calculo(ctx, atualizar_status: bool = True) -> Optional[Fertilizac
         resultado_var.set('')
         alerta_var.set('')
         controles['ultimo_resultado'] = None
+        if callable(atualiza_res):
+            atualiza_res()
         return None
 
     resultado = _gerar_resultado(ctx, demanda, controles)
@@ -188,6 +191,8 @@ def _executar_calculo(ctx, atualizar_status: bool = True) -> Optional[Fertilizac
         resultado_var.set('')
         alerta_var.set('')
         controles['ultimo_resultado'] = None
+        if callable(atualiza_res):
+            atualiza_res()
         return None
 
     resultado_var.set(_formatar_produtos(resultado.produtos))
@@ -200,6 +205,8 @@ def _executar_calculo(ctx, atualizar_status: bool = True) -> Optional[Fertilizac
         else:
             status_var.set('')
 
+    if callable(atualiza_res):
+        atualiza_res()
     return resultado
 
 
@@ -210,6 +217,13 @@ def atualizar_fertilizacao(ctx):
 def add_tab(tabhost, ctx):
     heading_font = ctk.CTkFont(size=13, weight='bold')
     body_font = ctk.CTkFont(size=11)
+    subheading_font = ctk.CTkFont(size=FONT_SIZE_BODY, weight='bold')
+    card_style = {
+        'fg_color': (PANEL_LIGHT, PANEL_DARK),
+        'border_width': 1,
+        'border_color': TEXT_PRIMARY,
+        'corner_radius': 12,
+    }
 
     logo_image = getattr(ctx, 'logo_image', None)
 
@@ -233,29 +247,33 @@ def add_tab(tabhost, ctx):
 
     fertilizantes_wrapper, fertilizantes_body = make_section(outer, 'FERTILIZANTES', heading_font)
 
-    formulado_frame = ctk.CTkFrame(fertilizantes_body, fg_color='transparent')
-    for col in range(6):
-        formulado_frame.grid_columnconfigure(col, weight=0)
-    ctk.CTkLabel(formulado_frame, text='Formulados N-P-K', font=body_font).grid(row=0, column=0, columnspan=6, sticky='w', pady=(0, 6))
+    formulado_frame = ctk.CTkFrame(fertilizantes_body, **card_style)
+    formulado_frame.grid_columnconfigure(0, weight=0)
+    formulado_frame.grid_columnconfigure(1, weight=1)
+    formulado_frame.grid_columnconfigure(2, weight=0)
+    formulado_frame.grid_columnconfigure(3, weight=1)
+    formulado_frame.grid_columnconfigure(4, weight=0)
+    formulado_frame.grid_columnconfigure(5, weight=1)
+    ctk.CTkLabel(formulado_frame, text='Formulados N-P-K', font=subheading_font).grid(row=0, column=0, columnspan=6, sticky='w', pady=(PADY_SMALL, 6))
 
-    ctk.CTkLabel(formulado_frame, text='N (%)', font=body_font).grid(row=1, column=0, sticky='w', pady=4)
-    entrada_n = ctk.CTkEntry(formulado_frame, width=70)
-    entrada_n.grid(row=1, column=1, sticky='w', padx=(0, 6), pady=4)
+    ctk.CTkLabel(formulado_frame, text='N (%)', font=body_font).grid(row=1, column=0, sticky='w', pady=4, padx=(PADX_STANDARD, PADX_SMALL))
+    entrada_n = ctk.CTkEntry(formulado_frame, width=80)
+    entrada_n.grid(row=1, column=1, sticky='ew', pady=4, padx=(0, PADX_SMALL))
 
-    ctk.CTkLabel(formulado_frame, text='P2O5 (%)', font=body_font).grid(row=1, column=2, sticky='w', pady=4)
-    entrada_p = ctk.CTkEntry(formulado_frame, width=70)
-    entrada_p.grid(row=1, column=3, sticky='w', padx=(0, 6), pady=4)
+    ctk.CTkLabel(formulado_frame, text='P2O5 (%)', font=body_font).grid(row=1, column=2, sticky='w', pady=4, padx=(PADX_SMALL, PADX_SMALL))
+    entrada_p = ctk.CTkEntry(formulado_frame, width=80)
+    entrada_p.grid(row=1, column=3, sticky='ew', pady=4, padx=(0, PADX_SMALL))
 
-    ctk.CTkLabel(formulado_frame, text='K2O (%)', font=body_font).grid(row=1, column=4, sticky='w', pady=4)
-    entrada_k = ctk.CTkEntry(formulado_frame, width=70)
-    entrada_k.grid(row=1, column=5, sticky='w', padx=(0, 6), pady=4)
+    ctk.CTkLabel(formulado_frame, text='K2O (%)', font=body_font).grid(row=1, column=4, sticky='w', pady=4, padx=(PADX_SMALL, PADX_SMALL))
+    entrada_k = ctk.CTkEntry(formulado_frame, width=80)
+    entrada_k.grid(row=1, column=5, sticky='ew', pady=4, padx=(0, PADX_STANDARD))
 
-    individual_frame = ctk.CTkFrame(fertilizantes_body, fg_color='transparent')
-    individual_frame.grid_columnconfigure(1, weight=1)
-    ctk.CTkLabel(individual_frame, text='Fertilizantes individuais', font=body_font).grid(row=0, column=0, columnspan=2, sticky='w', pady=(0, 6))
+    individual_frame = ctk.CTkFrame(fertilizantes_body, **card_style)
+    individual_frame.grid_columnconfigure(0, weight=1)
+    ctk.CTkLabel(individual_frame, text='Fertilizantes individuais', font=subheading_font).grid(row=0, column=0, columnspan=2, sticky='w', pady=(PADY_SMALL, 6), padx=PADX_STANDARD)
 
     submodo_var = ctk.StringVar(value='Escolha do usuário')
-    ctk.CTkLabel(individual_frame, text='Como deseja compor?', font=body_font).grid(row=1, column=0, sticky='w', pady=4)
+    ctk.CTkLabel(individual_frame, text='Como deseja compor?', font=body_font).grid(row=1, column=0, sticky='w', pady=4, padx=PADX_STANDARD)
     submodo_box = ctk.CTkComboBox(
         individual_frame,
         values=['Escolha do usuário', 'Escolha do software'],
@@ -263,35 +281,37 @@ def add_tab(tabhost, ctx):
         state='readonly',
         width=220,
     )
-    submodo_box.grid(row=1, column=1, sticky='w', pady=4)
+    submodo_box.grid(row=1, column=1, sticky='w', pady=4, padx=(0, PADX_STANDARD))
 
     selecoes_frame = ctk.CTkFrame(individual_frame, fg_color='transparent')
-    selecoes_frame.grid(row=2, column=0, columnspan=2, sticky='ew', pady=(6, 0))
+    selecoes_frame.grid(row=2, column=0, columnspan=2, sticky='ew', pady=(8, PADY_SMALL), padx=PADX_STANDARD)
+    selecoes_frame.grid_columnconfigure(0, weight=0)
     selecoes_frame.grid_columnconfigure(1, weight=1)
+    selecoes_frame.grid_columnconfigure(2, weight=0)
     selecoes_frame.grid_columnconfigure(3, weight=1)
 
     fosfatado_var = ctk.StringVar(value='')
-    ctk.CTkLabel(selecoes_frame, text='Fosfatado:', font=body_font).grid(row=0, column=0, sticky='w', pady=4)
+    ctk.CTkLabel(selecoes_frame, text='Fosfatado:', font=body_font).grid(row=0, column=0, sticky='w', pady=4, padx=(0, PADX_SMALL))
     fosfatado_box = ctk.CTkComboBox(
         selecoes_frame,
         values=FOSFATADOS_CHOICES,
         variable=fosfatado_var,
         state='readonly',
-        width=220,
+        width=210,
     )
-    fosfatado_box.grid(row=0, column=1, sticky='w', pady=4)
+    fosfatado_box.grid(row=0, column=1, sticky='ew', pady=4, padx=(0, PADX_STANDARD))
     fosfatado_box.set('')
 
     potassico_var = ctk.StringVar(value='')
-    ctk.CTkLabel(selecoes_frame, text='Potássico:', font=body_font).grid(row=0, column=2, sticky='w', pady=4, padx=(12, 0))
+    ctk.CTkLabel(selecoes_frame, text='Potássico:', font=body_font).grid(row=0, column=2, sticky='w', pady=4, padx=(0, PADX_SMALL))
     potassico_box = ctk.CTkComboBox(
         selecoes_frame,
         values=POTASSICOS_CHOICES,
         variable=potassico_var,
         state='readonly',
-        width=220,
+        width=210,
     )
-    potassico_box.grid(row=0, column=3, sticky='w', pady=4)
+    potassico_box.grid(row=0, column=3, sticky='ew', pady=4, padx=(0, 0))
     potassico_box.set('')
 
     resultado_wrapper, resultado_body = make_section(outer, 'RESULTADO', heading_font)
@@ -349,18 +369,18 @@ def add_tab(tabhost, ctx):
         if modo_norm.startswith('fertilizantes form'):
             individual_frame.pack_forget()
             if formulado_frame.winfo_manager() == '':
-                formulado_frame.pack(fill='x', pady=(0, 6))
+                formulado_frame.pack(fill='x', padx=PADX_SMALL, pady=(0, PADY_SMALL))
         else:
             formulado_frame.pack_forget()
             if individual_frame.winfo_manager() == '':
-                individual_frame.pack(fill='x', pady=(0, 6))
+                individual_frame.pack(fill='x', padx=PADX_SMALL, pady=(0, PADY_SMALL))
         atualizar_submodo()
         recalcular_silencioso()
 
     modo_box.configure(command=atualizar_formulario)
     submodo_box.configure(command=atualizar_submodo)
 
-    formulado_frame.pack(fill='x', pady=(0, 6))
+    formulado_frame.pack(fill='x', padx=PADX_SMALL, pady=(0, PADY_SMALL))
     atualizar_submodo()
     atualizar_fertilizacao(ctx)
 

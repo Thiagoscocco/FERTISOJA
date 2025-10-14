@@ -53,7 +53,15 @@ def main():
 
     tabhost = TabHost(tabview)
 
-    from core import aba_dados, aba_condicoes, aba_adubacao, aba_fertilizacao, aba_mapa_area, aba_recomendacao_calcario
+    from core import (
+        aba_dados,
+        aba_condicoes,
+        aba_adubacao,
+        aba_fertilizacao,
+        aba_recomendacao_calcario,
+        aba_resultados,
+        aba_mapa_area,
+    )
 
     ctx = AppContext(
         janela=janela,
@@ -70,6 +78,7 @@ def main():
     aba_recomendacao_calcario.add_tab(tabhost, ctx)
     aba_adubacao.add_tab(tabhost, ctx)
     aba_fertilizacao.add_tab(tabhost, ctx)
+    aba_resultados.add_tab(tabhost, ctx)
     #aba_mapa_area.add_tab(tabhost, ctx)
 
     aba_condicoes.atualizar(ctx)

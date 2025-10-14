@@ -45,6 +45,22 @@ def make_section(parent, title, font):
     return body
 
 
+def _registrar_calagem(ctx, dose_t_ha=0.0, area=0.0, modo='', epoca='', tipo='', tecnica=''):
+    area = area or 0.0
+    dose_t_ha = max(dose_t_ha or 0.0, 0.0)
+    kg_ha = dose_t_ha * 1000.0
+    kg_total = kg_ha * max(area, 0.0)
+    ctx.calagem_resultado = {
+        'dose_t_ha': dose_t_ha,
+        'kg_ha': kg_ha,
+        'kg_total': kg_total,
+        'modo': modo or '',
+        'epoca': epoca or '',
+        'tipo': tipo or '',
+        'tecnica': tecnica or '',
+    }
+
+
 def add_tab(tabhost, ctx):
     heading_font = ctk.CTkFont(size=13, weight='bold')
     body_font = ctk.CTkFont(size=11)
@@ -127,6 +143,8 @@ def add_tab(tabhost, ctx):
     for idx, (rotulo, chave) in enumerate(summary_rows):
         ctk.CTkLabel(sec_summary, text=rotulo, font=body_font).grid(row=idx, column=0, sticky='w', pady=2)
         ctk.CTkLabel(sec_summary, textvariable=summary_vars[chave], font=body_font, anchor='w', justify='left').grid(row=idx, column=1, sticky='w', pady=2)
+
+    _registrar_calagem(ctx)
 
     btn_calc = ctk.CTkButton(outer, text='CALCULAR')
     btn_calc.pack(pady=(12, 6))
@@ -240,6 +258,11 @@ def add_tab(tabhost, ctx):
                 if label_ctx is not None:
                     label_ctx.configure(text='0.00 t/ha')
                 mg_info_var.set('Mg trocável: sem dados')
+                tecnica_msg = summary_vars['tecnica'].get()
+                _registrar_calagem(ctx, 0.0, area, 'Sem necessidade', '', '', tecnica_msg)
+                atualiza_res = getattr(ctx, 'atualizar_resultados', None)
+                if callable(atualiza_res):
+                    atualiza_res()
                 return
 
             if not resultados_metodo:
@@ -310,6 +333,11 @@ def add_tab(tabhost, ctx):
                 mg_info_var.set(f"Mg trocável: {mg:.2f} cmolc/dm³ (limite 1.0)")
             else:
                 mg_info_var.set('Mg trocável: sem dados')
+            tecnica_msg = summary_vars['tecnica'].get()
+            _registrar_calagem(ctx, dose_ajustada, area, modo, epoca, tipo_calcario, tecnica_msg)
+            atualiza_res = getattr(ctx, 'atualizar_resultados', None)
+            if callable(atualiza_res):
+                atualiza_res()
         except ValueError as exc:
             messagebox.showerror('Calagem', str(exc))
         except Exception as exc:  # noqa: BLE001

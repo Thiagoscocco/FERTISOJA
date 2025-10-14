@@ -119,6 +119,9 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
 def atualizar(ctx: AppContext):
     controles = getattr(ctx, 'adubacao_controls', None)
     if not controles:
+        atualiza_res = getattr(ctx, 'atualizar_resultados', None)
+        if callable(atualiza_res):
+            atualiza_res()
         return
 
     summary_vars = controles.get('summary', {})
@@ -134,6 +137,9 @@ def atualizar(ctx: AppContext):
     atualiza_fert = getattr(ctx, 'atualizar_fertilizacao', None)
     if callable(atualiza_fert):
         atualiza_fert()
+    atualiza_res = getattr(ctx, 'atualizar_resultados', None)
+    if callable(atualiza_res):
+        atualiza_res()
 
     for var in summary_vars.values():
         var.set('-')
@@ -227,6 +233,9 @@ def aplicar_metodo(ctx: AppContext):
     correcao_var = controles.get('correcao_var')
 
     if not metodo_var or not resultado_metodo:
+        atualiza_res = getattr(ctx, 'atualizar_resultados', None)
+        if callable(atualiza_res):
+            atualiza_res()
         return
 
     for var in resultado_metodo.values():
@@ -241,6 +250,9 @@ def aplicar_metodo(ctx: AppContext):
         atualiza_fert = getattr(ctx, 'atualizar_fertilizacao', None)
         if callable(atualiza_fert):
             atualiza_fert()
+        atualiza_res = getattr(ctx, 'atualizar_resultados', None)
+        if callable(atualiza_res):
+            atualiza_res()
         return
 
     metodo_key = normalize_key(metodo_var.get() or '')
@@ -304,5 +316,3 @@ def aplicar_metodo(ctx: AppContext):
     atualiza_fert = getattr(ctx, 'atualizar_fertilizacao', None)
     if callable(atualiza_fert):
         atualiza_fert()
-
-

@@ -145,6 +145,9 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
             atualiza_fert = getattr(ctx, 'atualizar_fertilizacao', None)
             if callable(atualiza_fert):
                 atualiza_fert()
+            atualiza_res = getattr(ctx, 'atualizar_resultados', None)
+            if callable(atualiza_res):
+                atualiza_res()
             janela.after(4000, lambda: status_var.set(''))
 
     rodape = ctk.CTkFrame(aba_entrada, fg_color='transparent')

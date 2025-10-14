@@ -1,6 +1,7 @@
 ﻿"""Rotinas de cálculo para a aba de fertilização."""
 from __future__ import annotations
 
+import unicodedata
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
@@ -16,6 +17,12 @@ class Fertilizante:
     n: float = 0.0
 
 
+def _normalize_name(texto: str | None) -> str:
+    if not texto:
+        return ""
+    return unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode().lower().strip()
+
+
 _FOSFATADOS_SEQ: Tuple[Fertilizante, ...] = (
     Fertilizante('TSP', 'Superfosfato Triplo (TSP)', p2o5=0.46),
     Fertilizante('SSP', 'Superfosfato Simples (SSP)', p2o5=0.18, s=0.12),
@@ -24,6 +31,7 @@ _FOSFATADOS_SEQ: Tuple[Fertilizante, ...] = (
 )
 FOSFATADOS: Dict[str, Fertilizante] = {item.codigo: item for item in _FOSFATADOS_SEQ}
 _FOSFATADO_POR_NOME = {item.nome: item for item in _FOSFATADOS_SEQ}
+_FOSFATADO_POR_NORMALIZED = {_normalize_name(item.nome): item for item in _FOSFATADOS_SEQ}
 FOSFATADOS_CHOICES: Tuple[str, ...] = tuple(item.nome for item in _FOSFATADOS_SEQ)
 
 _POTASSICOS_SEQ: Tuple[Fertilizante, ...] = (
@@ -32,6 +40,7 @@ _POTASSICOS_SEQ: Tuple[Fertilizante, ...] = (
 )
 POTASSICOS: Dict[str, Fertilizante] = {item.codigo: item for item in _POTASSICOS_SEQ}
 _POTASSICO_POR_NOME = {item.nome: item for item in _POTASSICOS_SEQ}
+_POTASSICO_POR_NORMALIZED = {_normalize_name(item.nome): item for item in _POTASSICOS_SEQ}
 POTASSICOS_CHOICES: Tuple[str, ...] = tuple(item.nome for item in _POTASSICOS_SEQ)
 
 GESSO_PADRAO = Fertilizante('GESSO', 'Gesso agrícola', s=0.17)
@@ -51,13 +60,15 @@ class FertilizacaoResultado:
 def obter_fosfatado_por_nome(nome: str | None) -> Fertilizante | None:
     if not nome:
         return None
-    return _FOSFATADO_POR_NOME.get(nome)
+    chave = _normalize_name(nome)
+    return _FOSFATADO_POR_NOME.get(nome) or _FOSFATADO_POR_NORMALIZED.get(chave)
 
 
 def obter_potassico_por_nome(nome: str | None) -> Fertilizante | None:
     if not nome:
         return None
-    return _POTASSICO_POR_NOME.get(nome)
+    chave = _normalize_name(nome)
+    return _POTASSICO_POR_NOME.get(nome) or _POTASSICO_POR_NORMALIZED.get(chave)
 
 
 def _adicionar_produto(destino: List[Tuple[str, float]], nome: str, quantidade: float, minimo: float = 1e-6) -> None:
