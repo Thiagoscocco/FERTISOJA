@@ -73,6 +73,21 @@ def _format_mass(valor_kg: float, unidade: str, por_area: bool) -> str:
     return f"{_format_number(numero)}{sufixo}"
 
 
+def _format_calcario(valor_kg: float, unidade: str, por_area: bool) -> str:
+    unidade = (unidade or "kg").lower()
+    if unidade.startswith("saca"):
+        unidade = "t"
+    if unidade not in {"kg", "t"}:
+        unidade = "kg"
+    return _format_mass(valor_kg, unidade, por_area)
+
+
+def _format_molibdenio(valor_kg: float, por_area: bool) -> str:
+    valor_g = valor_kg * 1000.0
+    sufixo = " g/ha" if por_area else " g"
+    return f"{_format_number(valor_g)}{sufixo}"
+
+
 def _get_area_ha(ctx: AppContext) -> float:
     campo = ctx.campos.get("Area (Ha)")
     if campo is None:
@@ -154,7 +169,7 @@ def _preencher_linhas(
     _limpar_conteudo(container)
     for idx, (rotulo, valor) in enumerate(itens):
         linha = ctk.CTkFrame(container, fg_color="transparent")
-        sticky = "e" if align_right else "ew"
+        sticky = "ew"
         linha.grid(row=idx, column=0, sticky=sticky, padx=PADX_STANDARD, pady=(PADY_SMALL, PADY_SMALL + 8))
         if align_right:
             linha.grid_columnconfigure(0, weight=1)
@@ -194,11 +209,14 @@ def _montar_itens_per_area(
     unidade: str,
 ) -> List[Tuple[str, str]]:
     itens: List[Tuple[str, str]] = []
-    valor_calcario = _format_mass(float(calcario.get("kg_ha", 0.0)), "kg", por_area=True)
+    valor_calcario = _format_calcario(float(calcario.get("kg_ha", 0.0)), unidade, por_area=True)
     itens.append(("Calcario", valor_calcario))
 
     for nome, quantidade in fertilizantes.get("produtos", []):
-        valor = _format_mass(float(quantidade), unidade, por_area=True)
+        if nome == MOLIBDATO_PADRAO.nome:
+            valor = _format_molibdenio(float(quantidade), por_area=True)
+        else:
+            valor = _format_mass(float(quantidade), unidade, por_area=True)
         itens.append((nome, valor))
     return itens
 
@@ -211,12 +229,15 @@ def _montar_itens_totais(
 ) -> List[Tuple[str, str]]:
     itens: List[Tuple[str, str]] = []
     kg_total_calcario = float(calcario.get("kg_total", 0.0))
-    valor_calcario = _format_mass(kg_total_calcario, "kg", por_area=False)
+    valor_calcario = _format_calcario(kg_total_calcario, unidade, por_area=False)
     itens.append(("Calcario", valor_calcario))
 
     for nome, quantidade in fertilizantes.get("produtos", []):
         total_kg = float(quantidade) * max(area, 0.0)
-        valor = _format_mass(total_kg, unidade, por_area=False)
+        if nome == MOLIBDATO_PADRAO.nome:
+            valor = _format_molibdenio(total_kg, por_area=False)
+        else:
+            valor = _format_mass(total_kg, unidade, por_area=False)
         itens.append((nome, valor))
     return itens
 
@@ -362,6 +383,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
     section_font = ctk.CTkFont(size=FONT_SIZE_HEADING + 1, weight="bold")
     label_font = ctk.CTkFont(size=FONT_SIZE_BODY + 2, weight="bold")
     value_font = ctk.CTkFont(size=FONT_SIZE_BODY + 1)
+    recomend_font = ctk.CTkFont(size=FONT_SIZE_BODY + 2)
 
     aba = tabhost.add_tab("Resultados")
     outer = ctk.CTkScrollableFrame(aba, fg_color="transparent")
@@ -437,6 +459,15 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
     lista_total = ctk.CTkFrame(quadro_principal, fg_color="transparent")
     lista_total.grid(row=2, column=1, sticky="nsew", padx=(PADX_SMALL, PADX_STANDARD), pady=(PADY_SMALL, PADY_STANDARD))
 
+    titulo_tecnicas = ctk.CTkLabel(
+        outer,
+        text="RECOMENDAÇÕES TÉCNICAS",
+        font=section_font,
+        text_color=(TEXT_PRIMARY, "#4a9eff"),
+        anchor="center",
+    )
+    titulo_tecnicas.pack(fill="x", pady=(PADY_STANDARD, PADY_SMALL))
+
     quadro_recomendacoes = ctk.CTkFrame(
         outer,
         fg_color=(PANEL_LIGHT, PANEL_DARK),
@@ -457,7 +488,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
     calcario_label = ctk.CTkLabel(
         quadro_recomendacoes,
         textvariable=calcario_txt,
-        font=value_font,
+        font=recomend_font,
         text_color=TEXT_SECONDARY,
         wraplength=420,
         justify="left",
@@ -468,7 +499,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
     fert_label = ctk.CTkLabel(
         quadro_recomendacoes,
         textvariable=fert_txt,
-        font=value_font,
+        font=recomend_font,
         text_color=TEXT_SECONDARY,
         wraplength=420,
         justify="right",
