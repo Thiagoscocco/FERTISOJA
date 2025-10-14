@@ -169,16 +169,18 @@ def _preencher_linhas(
     _limpar_conteudo(container)
     for idx, (rotulo, valor) in enumerate(itens):
         linha = ctk.CTkFrame(container, fg_color="transparent")
-        sticky = "ew"
-        linha.grid(row=idx, column=0, sticky=sticky, padx=PADX_STANDARD, pady=(PADY_SMALL, PADY_SMALL + 8))
         if align_right:
-            linha.grid_columnconfigure(0, weight=1)
+            sticky = "e"
+            linha.grid(row=idx, column=0, sticky=sticky, padx=(PADX_STANDARD, PADX_STANDARD), pady=(PADY_SMALL, PADY_SMALL + 8))
+            linha.grid_columnconfigure(0, weight=0)
             linha.grid_columnconfigure(1, weight=0)
             label_sticky = "e"
             value_sticky = "e"
             label_anchor = "e"
             value_anchor = "e"
         else:
+            sticky = "ew"
+            linha.grid(row=idx, column=0, sticky=sticky, padx=PADX_STANDARD, pady=(PADY_SMALL, PADY_SMALL + 8))
             linha.grid_columnconfigure(0, weight=1)
             linha.grid_columnconfigure(1, weight=0)
             label_sticky = "w"

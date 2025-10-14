@@ -45,7 +45,7 @@ def make_section(parent, title, font):
     return body
 
 
-def _registrar_calagem(ctx, dose_t_ha=0.0, area=0.0, modo='', epoca='', tipo='', tecnica=''):
+def _registrar_calagem(ctx, dose_t_ha=0.0, area=0.0, modo='', epoca='', tipo='', tecnica='', prnt=None):
     area = area or 0.0
     dose_t_ha = max(dose_t_ha or 0.0, 0.0)
     kg_ha = dose_t_ha * 1000.0
@@ -58,6 +58,7 @@ def _registrar_calagem(ctx, dose_t_ha=0.0, area=0.0, modo='', epoca='', tipo='',
         'epoca': epoca or '',
         'tipo': tipo or '',
         'tecnica': tecnica or '',
+        'prnt': prnt if prnt is None else float(prnt),
     }
 
 
@@ -144,7 +145,7 @@ def add_tab(tabhost, ctx):
         ctk.CTkLabel(sec_summary, text=rotulo, font=body_font).grid(row=idx, column=0, sticky='w', pady=2)
         ctk.CTkLabel(sec_summary, textvariable=summary_vars[chave], font=body_font, anchor='w', justify='left').grid(row=idx, column=1, sticky='w', pady=2)
 
-    _registrar_calagem(ctx)
+    _registrar_calagem(ctx, prnt=_f(prnt_var.get(), 100.0))
 
     btn_calc = ctk.CTkButton(outer, text='CALCULAR')
     btn_calc.pack(pady=(12, 6))
@@ -259,7 +260,7 @@ def add_tab(tabhost, ctx):
                     label_ctx.configure(text='0.00 t/ha')
                 mg_info_var.set('Mg trocável: sem dados')
                 tecnica_msg = summary_vars['tecnica'].get()
-                _registrar_calagem(ctx, 0.0, area, 'Sem necessidade', '', '', tecnica_msg)
+                _registrar_calagem(ctx, 0.0, area, 'Sem necessidade', '', '', tecnica_msg, prnt)
                 atualiza_res = getattr(ctx, 'atualizar_resultados', None)
                 if callable(atualiza_res):
                     atualiza_res()
@@ -334,7 +335,7 @@ def add_tab(tabhost, ctx):
             else:
                 mg_info_var.set('Mg trocável: sem dados')
             tecnica_msg = summary_vars['tecnica'].get()
-            _registrar_calagem(ctx, dose_ajustada, area, modo, epoca, tipo_calcario, tecnica_msg)
+            _registrar_calagem(ctx, dose_ajustada, area, modo, epoca, tipo_calcario, tecnica_msg, prnt)
             atualiza_res = getattr(ctx, 'atualizar_resultados', None)
             if callable(atualiza_res):
                 atualiza_res()

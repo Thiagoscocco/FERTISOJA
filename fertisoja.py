@@ -59,6 +59,7 @@ def main():
         aba_adubacao,
         aba_fertilizacao,
         aba_recomendacao_calcario,
+        aba_exportacao,
         aba_resultados,
         aba_mapa_area,
     )
@@ -79,6 +80,7 @@ def main():
     aba_adubacao.add_tab(tabhost, ctx)
     aba_fertilizacao.add_tab(tabhost, ctx)
     aba_resultados.add_tab(tabhost, ctx)
+    aba_exportacao.add_tab(tabhost, ctx)
     #aba_mapa_area.add_tab(tabhost, ctx)
 
     aba_condicoes.atualizar(ctx)

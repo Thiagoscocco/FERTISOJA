@@ -314,16 +314,28 @@ def add_tab(tabhost, ctx):
     potassico_box.grid(row=0, column=3, sticky='ew', pady=4, padx=(0, 0))
     potassico_box.set('')
 
-    resultado_wrapper, resultado_body = make_section(outer, 'RESULTADO', heading_font)
-    resultado_body.grid_columnconfigure(0, weight=1)
-
     status_var = ctk.StringVar(value='Ajuste as opções para definir os fertilizantes.')
     resultado_var = ctk.StringVar(value='')
     alerta_var = ctk.StringVar(value='')
 
-    ctk.CTkLabel(resultado_body, textvariable=status_var, font=body_font, anchor='w', justify='left').pack(fill='x', pady=(0, 6))
-    ctk.CTkLabel(resultado_body, textvariable=resultado_var, font=body_font, anchor='w', justify='left').pack(fill='x', pady=(0, 6))
-    ctk.CTkLabel(resultado_body, textvariable=alerta_var, font=ctk.CTkFont(size=10), text_color='#F4B942', anchor='w', justify='left', wraplength=520).pack(fill='x')
+    resultado_wrapper, resultado_body = make_section(outer, 'RESULTADO', heading_font)
+    resultado_body.grid_columnconfigure(0, weight=1)
+    resultado_wrapper.pack_forget()
+
+    resultado_body._status_label = ctk.CTkLabel(resultado_body, textvariable=status_var, font=body_font, anchor='w', justify='left')
+    resultado_body._status_label.pack(fill='x', pady=(0, 6))
+    resultado_body._resultado_label = ctk.CTkLabel(resultado_body, textvariable=resultado_var, font=body_font, anchor='w', justify='left')
+    resultado_body._resultado_label.pack(fill='x', pady=(0, 6))
+    resultado_body._alerta_label = ctk.CTkLabel(
+        resultado_body,
+        textvariable=alerta_var,
+        font=ctk.CTkFont(size=10),
+        text_color='#F4B942',
+        anchor='w',
+        justify='left',
+        wraplength=520,
+    )
+    resultado_body._alerta_label.pack(fill='x')
 
     calcular_btn = ctk.CTkButton(outer, text='Calcular fertilização', command=lambda: _executar_calculo(ctx))
     calcular_btn.pack(pady=(16, 0))
