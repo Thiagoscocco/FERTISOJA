@@ -10,6 +10,8 @@ import shutil
 
 import tempfile
 
+import subprocess
+
 import unicodedata
 
 import xml.etree.ElementTree as ET
@@ -45,6 +47,12 @@ from .design_constants import (
     PADY_SMALL,
 
     PADY_STANDARD,
+
+    PANEL_LIGHT,
+
+    PANEL_DARK,
+
+    PRIMARY_BLUE,
 
     SUCCESS_GREEN,
 
@@ -353,10 +361,10 @@ def _coletar_dados(ctx: AppContext, controles: dict) -> tuple[dict[str, str], li
         dose_s_val = float(totais.get("S_SO4") or 0.0)
         dose_mo_g = float(totais.get("Mo_g_ha") or 0.0)
         dose_mo_val = dose_mo_g / 1000.0
-        dose_p = _format_mass(dose_p_val, "kg", por_area=True)
-        dose_k = _format_mass(dose_k_val, "kg", por_area=True)
-        dose_s = _format_mass(dose_s_val, "kg", por_area=True)
-        dose_mo = _format_molibdenio(dose_mo_val, por_area=True)
+        dose_p = _format_number(dose_p_val)
+        dose_k = _format_number(dose_k_val)
+        dose_s = _format_number(dose_s_val)
+        dose_mo = _format_number(dose_mo_val)
     dados = {
         "produtor": info_usuario.get("produtor", ""),
         "municipio": info_usuario.get("municipio", ""),
@@ -758,9 +766,16 @@ def _gerar_documento_docx(modelo: Path, destino: Path, dados: dict[str, str], fe
         except Exception:
             logo_bytes = None
     document_rels_bytes: bytes | None = None
+    skip_files = {
+        f'word/{HEADER_PART}',
+        'word/_rels/header1.xml.rels',
+        f'word/{HEADER_IMAGE_PATH}',
+    }
     with zipfile.ZipFile(modelo, 'r') as origem:
         with zipfile.ZipFile(destino, 'w', compression=zipfile.ZIP_DEFLATED) as alvo:
             for item in origem.infolist():
+                if item.filename in skip_files:
+                    continue
                 conteudo = origem.read(item.filename)
                 if item.filename == 'word/document.xml':
                     conteudo = _render_document_xml(conteudo, dados, fertilizantes)
@@ -806,27 +821,110 @@ def _gerar_documento_docx(modelo: Path, destino: Path, dados: dict[str, str], fe
 
 def _converter_para_pdf(origem_docx: Path, destino_pdf: Path) -> None:
 
+    convert = None
+
     try:
 
-        from docx2pdf import convert
+        from docx2pdf import convert as _convert  # type: ignore
 
-    except ImportError as exc:  # pragma: no cover - depende do ambiente do usu\u00e1rio
+        convert = _convert
+
+    except ImportError:
+
+        convert = None
+
+    if convert is not None:
+
+        try:
+
+            convert(str(origem_docx), str(destino_pdf))
+
+            if destino_pdf.exists():
+
+                return
+
+        except Exception:
+
+            # quedas da biblioteca seguem para fallback via Word
+
+            pass
+
+    _converter_via_word(origem_docx, destino_pdf)
+
+    if not destino_pdf.exists() or destino_pdf.stat().st_size == 0:
 
         raise ExportError(
 
-            "A biblioteca 'docx2pdf' n\u00e3o est\u00e1 instalada. "
+            "Falha ao converter o DOCX em PDF. Nenhum arquivo foi gerado."
 
-            "Instale-a com 'pip install docx2pdf' para gerar o PDF."
+        )
 
-        ) from exc
+
+def _converter_via_word(origem_docx: Path, destino_pdf: Path) -> None:
+
+    destino_pdf.parent.mkdir(parents=True, exist_ok=True)
+
+    script = """
+Dim inputPath
+Dim outputPath
+inputPath = WScript.Arguments(0)
+outputPath = WScript.Arguments(1)
+Dim wordApp
+Set wordApp = CreateObject(\"Word.Application\")
+wordApp.DisplayAlerts = 0
+wordApp.Visible = False
+Dim doc
+Set doc = wordApp.Documents.Open(inputPath, False, True)
+doc.ExportAsFixedFormat outputPath, 17
+doc.Close False
+wordApp.Quit
+"""
+
+    with tempfile.NamedTemporaryFile("w", suffix=".vbs", delete=False, encoding="utf-8") as tmp_file:
+
+        tmp_file.write(script)
+
+        script_path = Path(tmp_file.name)
 
     try:
 
-        convert(str(origem_docx), str(destino_pdf))
+        subprocess.run(
 
-    except Exception as exc:  # pragma: no cover - envolve automa\u00e7\u00e3o externa
+            ["cscript", "//nologo", str(script_path), str(origem_docx), str(destino_pdf)],
 
-        raise ExportError(f"Falha ao converter o DOCX em PDF: {exc}") from exc
+            check=True,
+
+            capture_output=True,
+
+            text=True,
+
+        )
+
+    except FileNotFoundError as exc:  # pragma: no cover - depende do ambiente local
+
+        raise ExportError(
+
+            "Não foi possível encontrar o utilitário 'cscript' ou o Microsoft Word para efetuar a conversão. "
+
+            "Instale o Word ou a biblioteca 'docx2pdf' para habilitar a exportação em PDF."
+
+        ) from exc
+
+    except subprocess.CalledProcessError as exc:  # pragma: no cover - depende do Word
+
+        mensagem = exc.stderr or exc.stdout or str(exc)
+
+        raise ExportError(f"Falha ao converter o DOCX em PDF usando o Microsoft Word: {mensagem}") from exc
+
+    finally:
+
+        try:
+
+            script_path.unlink(missing_ok=True)
+
+        except Exception:
+
+            pass
 
 def _executar_exportacao(ctx: AppContext, controles: dict) -> None:
 
@@ -910,7 +1008,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext) -> None:
 
     heading_font = getattr(ctx, "heading_font", ctk.CTkFont(size=FONT_SIZE_HEADING, weight="bold"))
 
-    aba = tabhost.add_tab("EXPORTA\u00c7\u00c3O")
+    aba = tabhost.add_tab("Exporta\u00e7\u00e3o")
 
     outer = ctk.CTkScrollableFrame(aba, fg_color="transparent")
 
@@ -920,96 +1018,130 @@ def add_tab(tabhost: TabHost, ctx: AppContext) -> None:
 
     sec_dados = make_section(outer, "DADOS DO PRODUTOR", heading_font)
 
-    sec_dados.grid_columnconfigure(0, weight=0)
+    sec_dados.grid_columnconfigure(0, weight=1)
 
-    sec_dados.grid_columnconfigure(1, weight=1)
+    form_card = ctk.CTkFrame(
+        sec_dados,
+        fg_color=(PANEL_LIGHT, PANEL_DARK),
+        corner_radius=12,
+    )
+
+    form_card.grid(row=0, column=0, sticky="ew")
+
+    form_card.grid_columnconfigure(0, weight=1, uniform="form")
+
+    form_card.grid_columnconfigure(1, weight=1, uniform="form")
 
     campos: dict[str, ctk.CTkEntry] = {}
 
-    linhas = [
-
-        ("Produtor", "produtor", ENTRY_WIDTH_STANDARD),
-
-        ("Munic\u00edpio", "municipio", ENTRY_WIDTH_STANDARD),
-
-        ("Talh\u00e3o", "talhao", ENTRY_WIDTH_STANDARD),
-
-        ("Ano", "ano", ENTRY_WIDTH_SMALL),
-
-        ("Safra", "safra", ENTRY_WIDTH_SMALL),
-
+    field_layout = [
+        [
+            ("Produtor", "produtor", 320, "Nome completo do produtor"),
+        ],
+        [
+            ("Munic\u00edpio", "municipio", 260, "Cidade/UF"),
+            ("Talh\u00e3o", "talhao", 200, "Identifica\u00e7\u00e3o do talh\u00e3o"),
+        ],
+        [
+            ("Ano", "ano", 140, "AAAA"),
+            ("Safra", "safra", 180, "Ex.: 2023/24"),
+        ],
     ]
 
-    for idx, (rotulo, chave, largura) in enumerate(linhas):
+    for row_index, group in enumerate(field_layout):
 
-        create_label(sec_dados, rotulo, weight="bold").grid(row=idx, column=0, sticky="w", pady=PADY_SMALL, padx=(0, PADX_MICRO))
+        for col_index, (rotulo, chave, largura, placeholder) in enumerate(group):
 
-        entrada = create_entry_field(sec_dados, width=largura)
+            column = col_index
 
-        entrada.grid(row=idx, column=1, sticky="ew", pady=PADY_SMALL, padx=(0, PADX_SMALL))
+            columnspan = 1
 
-        campos[chave] = entrada
+            if len(group) == 1:
 
-    instrucoes = create_label(
+                column = 0
 
+                columnspan = 2
+
+            field_wrapper = ctk.CTkFrame(form_card, fg_color="transparent")
+
+            field_wrapper.grid(
+                row=row_index,
+                column=column,
+                columnspan=columnspan,
+                sticky="ew",
+                padx=PADX_STANDARD,
+                pady=(PADY_STANDARD if row_index == 0 else PADY_SMALL, PADY_SMALL),
+            )
+
+            field_wrapper.grid_columnconfigure(0, weight=1)
+
+            create_label(field_wrapper, rotulo, weight="bold").pack(anchor="w", pady=(0, 2))
+
+            entrada = create_entry_field(
+                field_wrapper,
+                width=largura,
+                placeholder_text=placeholder,
+                corner_radius=10,
+                border_width=1,
+                border_color=(PRIMARY_BLUE, PRIMARY_BLUE),
+                fg_color=(PANEL_LIGHT, PANEL_DARK),
+            )
+
+            entrada.pack(fill="x")
+
+            campos[chave] = entrada
+
+    actions_card = ctk.CTkFrame(
         outer,
-
-        "Informe os dados do produtor e gere o PDF a partir do modelo padr\u00e3o.",
-
-        font_size=FONT_SIZE_BODY,
-
-        weight="normal",
-
-        anchor="w",
-
-        justify="left",
-
-        wraplength=520,
-
+        fg_color=(PANEL_LIGHT, PANEL_DARK),
+        corner_radius=12,
     )
 
-    instrucoes.pack(fill="x", pady=(PADY_STANDARD, PADY_SMALL), padx=PADX_STANDARD)
+    actions_card.pack(fill="x", padx=PADX_STANDARD, pady=(PADY_STANDARD, PADY_SMALL))
+
+    actions_card.grid_columnconfigure(0, weight=1)
+
+    instrucoes = create_label(
+        actions_card,
+        "Informe os dados do produtor e gere o PDF a partir do modelo padr\u00e3o.",
+        font_size=FONT_SIZE_BODY,
+        weight="normal",
+        anchor="w",
+        justify="left",
+        wraplength=520,
+    )
+
+    instrucoes.grid(row=0, column=0, sticky="ew", padx=PADX_STANDARD, pady=(PADY_STANDARD, PADY_SMALL))
 
     status_var = ctk.StringVar(value="Pronto para exportar.")
 
     status_label = create_label(
-
-        outer,
-
+        actions_card,
         "",
-
         font_size=FONT_SIZE_BODY,
-
         weight="normal",
-
         anchor="w",
-
         justify="left",
-
         wraplength=520,
-
     )
 
     status_label.configure(textvariable=status_var, text_color=SUCCESS_GREEN)
 
-    status_label.pack(fill="x", padx=PADX_STANDARD, pady=(0, PADY_SMALL))
+    status_label.grid(row=1, column=0, sticky="ew", padx=PADX_STANDARD)
 
     controles = {"entries": campos}  # preenchido abaixo
 
     botao = create_primary_button(
-
-        outer,
-
+        actions_card,
         "Gerar PDF",
-
         lambda: _executar_exportacao(ctx, controles),
-
     )
 
-    botao.pack(pady=(PADY_SMALL, PADY_STANDARD))
+    botao.grid(row=2, column=0, padx=PADX_STANDARD, pady=(PADY_SMALL, PADY_STANDARD), sticky="ew")
 
     controles["status_var"] = status_var
 
     ctx.exportacao_controls = controles
+
 
 __all__ = ["add_tab"]
