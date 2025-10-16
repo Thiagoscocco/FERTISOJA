@@ -1,27 +1,20 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 
 from __future__ import annotations
 
 import io
-
+import mimetypes
 import re
-
+import smtplib
+import ssl
 import shutil
-
 import tempfile
-
-import subprocess
-
 import unicodedata
-
 import xml.etree.ElementTree as ET
-
 import zipfile
-
 from dataclasses import dataclass
-
+from email.message import EmailMessage
 from pathlib import Path
-
 from tkinter import filedialog, messagebox
 
 import customtkinter as ctk
@@ -90,12 +83,18 @@ HEADER_REL_ID = "rIdExportHeader"
 HEADER_PART = "header1.xml"
 HEADER_IMAGE_REL_ID = "rIdExportHeaderImage"
 HEADER_IMAGE_PATH = "media/logo_thiago.png"
+EMAIL_CONFIG_PATH = Path(__file__).resolve().parent.parent / "modelo_mail" / ".env"
+EMAIL_SUBJECT = "Recomenda\u00e7\u00e3o de Aduba\u00e7\u00e3o e Calagem \u2013 FertiSoja"
+EMAIL_SEPARATOR_PATTERN = re.compile(r"[;,]")
+EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 ET.register_namespace("", PKG_REL_NS)
 
 class ExportError(RuntimeError):
 
     """Erro de exporta\u00e7\u00e3o controlado."""
+
+_EMAIL_CONFIG_CACHE: dict[str, str] | None = None
 
 @dataclass
 
@@ -130,6 +129,268 @@ def _get_entry_text(widget) -> str:
         return ""
 
     return str(value).strip()
+
+def _load_email_config() -> dict[str, str]:
+
+    global _EMAIL_CONFIG_CACHE
+
+    if _EMAIL_CONFIG_CACHE is not None:
+
+        return _EMAIL_CONFIG_CACHE
+
+    if not EMAIL_CONFIG_PATH.exists():
+
+        raise ExportError(
+
+            "As configura\u00e7\u00f5es de e-mail n\u00e3o foram encontradas (arquivo modelo_mail/.env ausente)."
+
+        )
+
+    config: dict[str, str] = {}
+
+    try:
+
+        linhas = EMAIL_CONFIG_PATH.read_text(encoding="utf-8").splitlines()
+
+    except Exception as exc:
+
+        raise ExportError("Falha ao ler o arquivo de configura\u00e7\u00e3o de e-mail.") from exc
+
+    for linha in linhas:
+
+        texto = linha.strip()
+
+        if not texto or texto.startswith("#"):
+
+            continue
+
+        if "=" not in texto:
+
+            continue
+
+        chave, valor = texto.split("=", 1)
+
+        config[chave.strip()] = valor.strip().strip('"').strip("'")
+
+    obrigatorios = ["EMAIL_FROM", "SMTP_PASS", "SMTP_HOST", "SMTP_PORT"]
+
+    ausentes = [item for item in obrigatorios if not config.get(item)]
+
+    if ausentes:
+
+        raise ExportError(
+
+            "Configura\u00e7\u00f5es de e-mail incompletas. Verifique o arquivo modelo_mail/.env."
+
+        )
+
+    _EMAIL_CONFIG_CACHE = config
+
+    return config
+
+def _config_bool(value: str | None, default: bool = True) -> bool:
+
+    if value is None:
+
+        return default
+
+    return value.strip().lower() not in {"0", "false", "no", "n"}
+
+def _parse_recipient_list(raw_value: str) -> list[str]:
+
+    if not raw_value:
+
+        raise ExportError("Informe o e-mail do destinat\u00e1rio.")
+
+    candidatos = EMAIL_SEPARATOR_PATTERN.split(raw_value)
+
+    emails: list[str] = []
+
+    for item in candidatos:
+
+        email = item.strip()
+
+        if not email:
+
+            continue
+
+        if not EMAIL_REGEX.fullmatch(email):
+
+            raise ExportError(f"E-mail inv\u00e1lido: {email}")
+
+        emails.append(email)
+
+    if not emails:
+
+        raise ExportError("Informe o e-mail do destinat\u00e1rio.")
+
+    return emails
+
+def _compose_email_body(dados: dict[str, str]) -> str:
+
+    produtor = dados.get("produtor") or "Produtor(a)"
+
+    municipio = dados.get("municipio") or "-"
+
+    talhao = dados.get("talhao") or "-"
+
+    safra = dados.get("safra") or "-"
+
+    linhas = [
+
+        f"Ol\u00e1, {produtor}!",
+
+        "Segue em anexo o relat\u00f3rio gerado pelo FertiSoja, contendo a interpreta\u00e7\u00e3o da an\u00e1lise de solo e a recomenda\u00e7\u00e3o de aduba\u00e7\u00e3o e calagem para a sua \u00e1rea "
+
+        f"({municipio} \u2013 {talhao}, {safra}).",
+
+        "",
+
+        "O documento apresenta:",
+
+        "\u2022 Condi\u00e7\u00f5es gerais do solo (argila, CTC, mat\u00e9ria org\u00e2nica, etc.);",
+
+        "\u2022 Classifica\u00e7\u00e3o dos nutrientes (macro e micronutrientes);",
+
+        "\u2022 Recomenda\u00e7\u00e3o detalhada de calagem e fertiliza\u00e7\u00e3o, com doses por hectare e totais.",
+
+        "",
+
+        "Este laudo foi gerado automaticamente com base no Manual de Aduba\u00e7\u00e3o e Calagem para os Estados do RS e SC (2016) e deve ser interpretado por um Engenheiro Agr\u00f4nomo habilitado antes da aplica\u00e7\u00e3o em campo.",
+
+        "O FertiSoja ainda est\u00e1 em fase de testes. Caso encontre diverg\u00eancias, sugest\u00f5es ou deseje validar os resultados, entre em contato com Thiago pelo WhatsApp +55 (51) 98019-1913.",
+
+    ]
+
+    return "\n".join(linhas)
+
+def _build_attachment_filename(dados: dict[str, str], extension: str = ".docx") -> str:
+
+    partes: list[str] = []
+
+    for chave in ("produtor", "municipio", "talhao"):
+
+        valor = dados.get(chave, "")
+
+        if not valor:
+
+            continue
+
+        normalizado = _normalize_text(valor)
+
+        normalizado = re.sub(r"[^a-z0-9]+", "_", normalizado).strip("_")
+
+        if normalizado:
+
+            partes.append(normalizado)
+
+    base = "_".join(partes) if partes else "relatorio"
+    ext = extension if extension.startswith(".") else f".{extension}"
+
+    return f"Recomendacao_FertiSoja_{base}{ext}"
+
+
+def _send_email_with_attachment(
+
+    subject: str,
+
+    body: str,
+
+    recipients: list[str],
+
+    attachment_path: Path,
+
+    attachment_name: str,
+
+    config: dict[str, str],
+
+) -> None:
+
+    remetente = config.get("EMAIL_FROM") or config.get("SMTP_USER")
+
+    if not remetente:
+
+        raise ExportError("Remetente de e-mail n\u00e3o configurado (EMAIL_FROM ou SMTP_USER).")
+
+    msg = EmailMessage()
+
+    msg["Subject"] = subject
+
+    msg["From"] = remetente
+
+    msg["To"] = ", ".join(recipients)
+
+    msg.set_content(body, subtype="plain", charset="utf-8")
+
+    try:
+
+        with attachment_path.open("rb") as arquivo:
+
+            mime_type, _ = mimetypes.guess_type(str(attachment_path))
+            maintype = "application"
+            subtype = "octet-stream"
+            if mime_type and "/" in mime_type:
+                maintype, subtype = mime_type.split("/", 1)
+            msg.add_attachment(
+                arquivo.read(),
+                maintype=maintype,
+                subtype=subtype,
+                filename=attachment_name,
+            )
+
+    except Exception as exc:
+
+        raise ExportError(f"Falha ao anexar o documento ao e-mail: {exc}") from exc
+
+    host = config.get("SMTP_HOST", "smtp.gmail.com")
+
+    port_raw = config.get("SMTP_PORT", "587") or "587"
+
+    try:
+
+        port = int(port_raw)
+
+    except ValueError as exc:
+
+        raise ExportError(f"Porta SMTP inv\u00e1lida: {port_raw}") from exc
+
+    usuario = config.get("SMTP_USER") or remetente
+
+    senha = config.get("SMTP_PASS", "")
+
+    use_tls = _config_bool(config.get("SMTP_USE_TLS"), default=True)
+
+    contexto = ssl.create_default_context()
+
+    try:
+
+        if use_tls and port != 465:
+
+            with smtplib.SMTP(host, port) as server:
+
+                server.ehlo()
+
+                server.starttls(context=contexto)
+
+                if usuario and senha:
+
+                    server.login(usuario, senha)
+
+                server.send_message(msg)
+
+        else:
+
+            with smtplib.SMTP_SSL(host, port, context=contexto) as server:
+
+                if usuario and senha:
+
+                    server.login(usuario, senha)
+
+                server.send_message(msg)
+
+    except Exception as exc:
+
+        raise ExportError(f"Falha ao enviar o e-mail: {exc}") from exc
 
 def _lookup_value(data: dict, *aliases: str) -> str:
 
@@ -341,7 +602,7 @@ def _coletar_dados(ctx: AppContext, controles: dict) -> tuple[dict[str, str], li
     }
     calagem = getattr(ctx, "calagem_resultado", None)
     if not isinstance(calagem, dict):
-        raise ExportError("Calcule a recomendação de calagem antes de exportar.")
+        raise ExportError("Calcule a recomendaÃ§Ã£o de calagem antes de exportar.")
     dose_t_ha = float(calagem.get("dose_t_ha") or 0.0)
     kg_total = float(calagem.get("kg_total") or 0.0)
     kg_ha = float(calagem.get("kg_ha") or dose_t_ha * 1000.0)
@@ -784,7 +1045,7 @@ def _gerar_documento_docx(modelo: Path, destino: Path, dados: dict[str, str], fe
                     continue
                 alvo.writestr(item.filename, conteudo)
             if document_rels_bytes is None:
-                raise ExportError('Modelo inválido: relacionamentos do documento ausentes.')
+                raise ExportError('Modelo invÃ¡lido: relacionamentos do documento ausentes.')
             rels_root = ET.fromstring(document_rels_bytes)
             existing = {rel.get('Id') for rel in rels_root.findall(f'{{{PKG_REL_NS}}}Relationship')}
             if HEADER_REL_ID not in existing:
@@ -819,120 +1080,13 @@ def _gerar_documento_docx(modelo: Path, destino: Path, dados: dict[str, str], fe
             alvo.writestr('word/_rels/header1.xml.rels', header_rels_buffer.getvalue())
 
 
-def _converter_para_pdf(origem_docx: Path, destino_pdf: Path) -> None:
-
-    convert = None
-
-    try:
-
-        from docx2pdf import convert as _convert  # type: ignore
-
-        convert = _convert
-
-    except ImportError:
-
-        convert = None
-
-    if convert is not None:
-
-        try:
-
-            convert(str(origem_docx), str(destino_pdf))
-
-            if destino_pdf.exists():
-
-                return
-
-        except Exception:
-
-            # quedas da biblioteca seguem para fallback via Word
-
-            pass
-
-    _converter_via_word(origem_docx, destino_pdf)
-
-    if not destino_pdf.exists() or destino_pdf.stat().st_size == 0:
-
-        raise ExportError(
-
-            "Falha ao converter o DOCX em PDF. Nenhum arquivo foi gerado."
-
-        )
-
-
-def _converter_via_word(origem_docx: Path, destino_pdf: Path) -> None:
-
-    destino_pdf.parent.mkdir(parents=True, exist_ok=True)
-
-    script = """
-Dim inputPath
-Dim outputPath
-inputPath = WScript.Arguments(0)
-outputPath = WScript.Arguments(1)
-Dim wordApp
-Set wordApp = CreateObject(\"Word.Application\")
-wordApp.DisplayAlerts = 0
-wordApp.Visible = False
-Dim doc
-Set doc = wordApp.Documents.Open(inputPath, False, True)
-doc.ExportAsFixedFormat outputPath, 17
-doc.Close False
-wordApp.Quit
-"""
-
-    with tempfile.NamedTemporaryFile("w", suffix=".vbs", delete=False, encoding="utf-8") as tmp_file:
-
-        tmp_file.write(script)
-
-        script_path = Path(tmp_file.name)
-
-    try:
-
-        subprocess.run(
-
-            ["cscript", "//nologo", str(script_path), str(origem_docx), str(destino_pdf)],
-
-            check=True,
-
-            capture_output=True,
-
-            text=True,
-
-        )
-
-    except FileNotFoundError as exc:  # pragma: no cover - depende do ambiente local
-
-        raise ExportError(
-
-            "Não foi possível encontrar o utilitário 'cscript' ou o Microsoft Word para efetuar a conversão. "
-
-            "Instale o Word ou a biblioteca 'docx2pdf' para habilitar a exportação em PDF."
-
-        ) from exc
-
-    except subprocess.CalledProcessError as exc:  # pragma: no cover - depende do Word
-
-        mensagem = exc.stderr or exc.stdout or str(exc)
-
-        raise ExportError(f"Falha ao converter o DOCX em PDF usando o Microsoft Word: {mensagem}") from exc
-
-    finally:
-
-        try:
-
-            script_path.unlink(missing_ok=True)
-
-        except Exception:
-
-            pass
-
-def _executar_exportacao(ctx: AppContext, controles: dict) -> None:
+def _executar_envio_email(ctx: AppContext, controles: dict) -> None:
 
     status_var = controles.get("status_var")
 
     if status_var is not None:
 
-        status_var.set("Preparando exporta\u00e7\u00e3o...")
+        status_var.set("Preparando o e-mail...")
 
     try:
 
@@ -948,13 +1102,84 @@ def _executar_exportacao(ctx: AppContext, controles: dict) -> None:
 
         dados, fertilizantes = _coletar_dados(ctx, controles)
 
+        email_widget = controles.get("email_entry")
+
+        destinatarios = _parse_recipient_list(_get_entry_text(email_widget))
+
+        config = _load_email_config()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+
+            base_dir = Path(tmpdir)
+            tmp_docx = base_dir / "fertisoja_email.docx"
+
+            _gerar_documento_docx(modelo, tmp_docx, dados, fertilizantes)
+
+            attachment_name = _build_attachment_filename(dados, ".docx")
+            corpo_email = _compose_email_body(dados)
+
+            _send_email_with_attachment(
+                EMAIL_SUBJECT,
+                corpo_email,
+                destinatarios,
+                tmp_docx,
+                attachment_name,
+                config,
+            )
+
+        mensagem = f"E-mail enviado para: {', '.join(destinatarios)}"
+
+        if status_var is not None:
+
+            status_var.set(mensagem)
+
+        messagebox.showinfo("Exporta\u00e7\u00e3o", mensagem)
+
+    except ExportError as exc:
+
+        if status_var is not None:
+
+            status_var.set(str(exc))
+
+        messagebox.showerror("Exporta\u00e7\u00e3o", str(exc))
+
+    except Exception as exc:  # pragma: no cover - fallback gen\u00e9rico
+
+        if status_var is not None:
+
+            status_var.set("Falha ao enviar o e-mail.")
+
+        messagebox.showerror("Exporta\u00e7\u00e3o", f"Erro inesperado: {exc}")
+
+def _executar_exportacao(ctx: AppContext, controles: dict) -> None:
+
+    status_var = controles.get("status_var")
+
+    if status_var is not None:
+
+        status_var.set("Preparando exportação...")
+
+    try:
+
+        modelo = _template_path()
+
+        if not modelo.exists():
+
+            raise ExportError(
+
+                "O arquivo de modelo não foi encontrado no diretório do projeto."
+
+            )
+
+        dados, fertilizantes = _coletar_dados(ctx, controles)
+
         caminho_saida = filedialog.asksaveasfilename(
 
             title="Salvar documento",
 
-            defaultextension=".pdf",
+            defaultextension=".docx",
 
-            filetypes=[("PDF", "*.pdf"), ("Documento do Word", "*.docx")],
+            filetypes=[("Documento do Word", "*.docx")],
 
         )
 
@@ -962,47 +1187,43 @@ def _executar_exportacao(ctx: AppContext, controles: dict) -> None:
 
             if status_var is not None:
 
-                status_var.set("Exporta\u00e7\u00e3o cancelada.")
+                status_var.set("Exportação cancelada.")
 
             return
 
         destino = Path(caminho_saida)
 
-        salvar_pdf = destino.suffix.lower() == ".pdf"
-
-        destino_docx = destino if not salvar_pdf else destino.with_suffix(".docx")
-
         with tempfile.TemporaryDirectory() as tmpdir:
+
             tmp_docx = Path(tmpdir) / "fertisoja_exportacao.docx"
+
             _gerar_documento_docx(modelo, tmp_docx, dados, fertilizantes)
-            if salvar_pdf:
-                try:
-                    _converter_para_pdf(tmp_docx, destino)
-                    mensagem = f"Documento salvo em: {destino}"
-                except ExportError as exc:
-                    shutil.copy2(tmp_docx, destino_docx)
-                    mensagem = (
-                        f"Não foi possível converter para PDF ({exc}).\n"
-                        f"O documento em DOCX foi salvo em: {destino_docx}"
-                    )
-            else:
-                shutil.copy2(tmp_docx, destino_docx)
-                mensagem = f"Documento salvo em: {destino_docx}"
+
+            shutil.copy2(tmp_docx, destino)
+
+            mensagem = f"Documento salvo em: {destino}"
+
         if status_var is not None:
+
             status_var.set(mensagem)
-        messagebox.showinfo("Exporta\u00e7\u00e3o", mensagem)
+
+        messagebox.showinfo("Exportação", mensagem)
 
     except ExportError as exc:
+
         if status_var is not None:
+
             status_var.set(str(exc))
 
-        messagebox.showerror("Exporta\u00e7\u00e3o", str(exc))
+        messagebox.showerror("Exportação", str(exc))
 
-    except Exception as exc:  # pragma: no cover - fallback gen\u00e9rico
+    except Exception as exc:  # pragma: no cover - fallback genérico
+
         if status_var is not None:
+
             status_var.set("Falha ao exportar o documento.")
 
-        messagebox.showerror("Exporta\u00e7\u00e3o", f"Erro inesperado: {exc}")
+        messagebox.showerror("Exportação", f"Erro inesperado: {exc}")
 
 def add_tab(tabhost: TabHost, ctx: AppContext) -> None:
 
@@ -1103,7 +1324,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext) -> None:
 
     instrucoes = create_label(
         actions_card,
-        "Informe os dados do produtor e gere o PDF a partir do modelo padr\u00e3o.",
+        "Informe os dados do produtor e gere o documento DOCX a partir do modelo padrão.",
         font_size=FONT_SIZE_BODY,
         weight="normal",
         anchor="w",
@@ -1133,15 +1354,46 @@ def add_tab(tabhost: TabHost, ctx: AppContext) -> None:
 
     botao = create_primary_button(
         actions_card,
-        "Gerar PDF",
+        "Gerar DOCX",
         lambda: _executar_exportacao(ctx, controles),
     )
 
-    botao.grid(row=2, column=0, padx=PADX_STANDARD, pady=(PADY_SMALL, PADY_STANDARD), sticky="ew")
+    botao.grid(row=2, column=0, padx=PADX_STANDARD, pady=(PADY_SMALL, 0), sticky="ew")
+
+    botao_email = create_primary_button(
+        actions_card,
+        "Enviar Por Email",
+        lambda: _executar_envio_email(ctx, controles),
+    )
+
+    botao_email.grid(row=3, column=0, padx=PADX_STANDARD, pady=(PADY_SMALL, PADY_SMALL), sticky="ew")
+
+    email_label = create_label(
+        actions_card,
+        "E-mail do destinat\u00e1rio",
+        weight="bold",
+        anchor="w",
+    )
+
+    email_label.grid(row=4, column=0, sticky="ew", padx=PADX_STANDARD, pady=(PADY_SMALL, 2))
+
+    email_entry = create_entry_field(
+        actions_card,
+        width=ENTRY_WIDTH_STANDARD,
+        placeholder_text="ex.: produtor@email.com",
+        corner_radius=10,
+        border_width=1,
+        border_color=(PRIMARY_BLUE, PRIMARY_BLUE),
+        fg_color=(PANEL_LIGHT, PANEL_DARK),
+    )
+
+    email_entry.grid(row=5, column=0, sticky="ew", padx=PADX_STANDARD, pady=(0, PADY_STANDARD))
 
     controles["status_var"] = status_var
+    controles["email_entry"] = email_entry
 
     ctx.exportacao_controls = controles
 
 
 __all__ = ["add_tab"]
+
