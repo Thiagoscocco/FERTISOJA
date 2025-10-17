@@ -17,16 +17,14 @@ from fertilizacao import (
     obter_potassico_por_nome,
 )
 from .design_constants import *
+from .ui import make_section as build_section
 
 
 def make_section(parent, title: str, font: ctk.CTkFont):
-    wrapper = ctk.CTkFrame(parent, fg_color=(PANEL_LIGHT, PANEL_DARK))
-    wrapper.pack(fill='x', pady=(PADY_SMALL, 0))
-    header = ctk.CTkLabel(wrapper, text=title, font=font, anchor='w', 
-                         text_color=(TEXT_PRIMARY, "#4a9eff"))
-    header.pack(anchor='w', padx=PADX_STANDARD, pady=(PADY_STANDARD, PADY_SMALL))
-    body = ctk.CTkFrame(wrapper, fg_color='transparent')
-    body.pack(fill='both', expand=True, padx=PADX_STANDARD, pady=(0, PADY_STANDARD))
+    body = build_section(parent, title, font, wrap=580)
+    wrapper = body.master
+    if not isinstance(wrapper, ctk.CTkFrame):
+        raise TypeError("make_section expected CTkFrame wrapper")
     return wrapper, body
 
 

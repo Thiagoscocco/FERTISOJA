@@ -12,6 +12,7 @@ from core.calagem_dados import (
     lime_dose_from_polynomial,
 )
 from .design_constants import *
+from .ui import make_section as build_section
 
 PH_THRESHOLD_NEED = 5.5
 PH_SEVERE_PD = 5.2
@@ -35,14 +36,7 @@ def _f(value, default=None):
 
 
 def make_section(parent, title, font):
-    frame = ctk.CTkFrame(parent, fg_color=(PANEL_LIGHT, PANEL_DARK))
-    frame.pack(fill='x', pady=(PADY_SMALL, 0))
-    header = ctk.CTkLabel(frame, text=title, font=font, anchor='w',
-                         text_color=(TEXT_PRIMARY, "#4a9eff"))
-    header.pack(anchor='w', padx=PADX_STANDARD, pady=(PADY_STANDARD, PADY_SMALL))
-    body = ctk.CTkFrame(frame, fg_color='transparent')
-    body.pack(fill='both', expand=True, padx=PADX_STANDARD, pady=(0, PADY_STANDARD))
-    return body
+    return build_section(parent, title, font, wrap=520)
 
 
 def _registrar_calagem(ctx, dose_t_ha=0.0, area=0.0, modo='', epoca='', tipo='', tecnica='', prnt=None):
