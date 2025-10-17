@@ -115,8 +115,12 @@ def main() -> None:
     tab_segment.grid_remove()
 
     tab_names = list(tabview._tab_dict.keys())  # noqa: SLF001
-    top_row = tab_names[:4]
-    bottom_row = tab_names[4:]
+    if len(tab_names) > 4:
+        top_row = tab_names[:4]
+        bottom_row = tab_names[4:]
+    else:
+        top_row = tab_names
+        bottom_row = []
 
     button_font = ctk.CTkFont(size=14, weight="bold")
     inactive_color = (PLANT_HOVER, PLANT_HOVER)
@@ -134,7 +138,7 @@ def main() -> None:
         tabview.set(name)
         _sync_buttons(name)
 
-    def _build_row(names: list[str], row_index: int) -> None:
+    def _build_row(names: list[str], row_index: int, center: bool = False) -> None:
         if not names:
             return
         row_frame = ctk.CTkFrame(
@@ -143,9 +147,16 @@ def main() -> None:
             border_width=0,
         )
         row_frame.grid(row=row_index, column=0, sticky="ew")
+        if center:
+            row_frame.grid_columnconfigure(0, weight=1)
+            row_frame.grid_columnconfigure(2, weight=1)
+            container = ctk.CTkFrame(row_frame, fg_color=(PANEL_DARK, PANEL_DARK), border_width=0)
+            container.grid(row=0, column=1)
+        else:
+            container = row_frame
         for idx, name in enumerate(names):
             btn = ctk.CTkButton(
-                row_frame,
+                container,
                 text=name,
                 width=170,
                 height=34,
@@ -159,7 +170,7 @@ def main() -> None:
             buttons[name] = btn
 
     _build_row(top_row, 0)
-    _build_row(bottom_row, 1)
+    _build_row(bottom_row, 1, center=True)
 
     def _on_tab_change(name: str) -> None:
         _sync_buttons(name)

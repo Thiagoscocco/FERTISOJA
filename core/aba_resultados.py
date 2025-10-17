@@ -387,7 +387,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
     value_font = ctk.CTkFont(size=FONT_SIZE_BODY + 1)
     recomend_font = ctk.CTkFont(size=FONT_SIZE_BODY + 2)
 
-    aba = tabhost.add_tab("Resultados")
+    aba = tabhost.add_tab("🌾 Resultados")
     outer = ctk.CTkScrollableFrame(aba, fg_color="transparent")
     outer.pack(fill="both", expand=True, padx=PADX_STANDARD, pady=PADY_STANDARD)
     outer.grid_columnconfigure(0, weight=1)

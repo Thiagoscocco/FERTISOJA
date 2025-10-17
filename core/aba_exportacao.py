@@ -1229,7 +1229,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext) -> None:
 
     heading_font = getattr(ctx, "heading_font", ctk.CTkFont(size=FONT_SIZE_HEADING, weight="bold"))
 
-    aba = tabhost.add_tab("Exporta\u00e7\u00e3o")
+    aba = tabhost.add_tab("🌱 Exporta\u00e7\u00e3o")
 
     outer = ctk.CTkScrollableFrame(aba, fg_color="transparent")
 
