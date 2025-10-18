@@ -10,6 +10,7 @@ from .ui import (
     coletar_diagnostico_entradas,
     create_label,
     make_section,
+    place_logo_footer,
 )
 from .design_constants import (
     FONT_SIZE_BODY,
@@ -111,9 +112,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
     alertas_container.pack(fill="x")
 
     if getattr(ctx, "logo_image", None) is not None:
-        logo_label = ctk.CTkLabel(aba, image=ctx.logo_image, text="")
-        logo_label.pack(anchor="se", padx=PADX_STANDARD, pady=PADY_STANDARD)
-        logo_label.image = ctx.logo_image
+        place_logo_footer(aba, ctx.logo_image)
 
     ctx.condicoes_controls = {
         "summary": summary_vars,

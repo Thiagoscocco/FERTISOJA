@@ -23,6 +23,7 @@ from core.design_constants import (
     PRIMARY_BLUE,
     PRIMARY_HOVER,
 )
+from core.intro_overlay import IntroOverlay
 
 
 def main() -> None:
@@ -181,6 +182,8 @@ def main() -> None:
 
     aba_condicoes.atualizar(ctx)
     aba_adubacao.atualizar(ctx)
+
+    ctx.intro_overlay = IntroOverlay(tab_container)
 
     janela.mainloop()
 

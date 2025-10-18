@@ -8,6 +8,8 @@ import os
 import urllib.request
 from io import BytesIO
 
+from .ui import place_logo_footer
+
 try:
     from PIL import Image, ImageTk, ImageDraw
     PIL_OK = True
@@ -421,6 +423,4 @@ def add_tab(tabhost, ctx):
     ctk.CTkButton(btns_wrap, text="Calcular Área", command=calcular_area).pack(pady=4)
 
     if logo_image is not None:
-        logo_label = ctk.CTkLabel(frame, image=logo_image, text='')
-        logo_label.pack(anchor='se', padx=12, pady=12)
-        logo_label.image = logo_image
+        place_logo_footer(frame, logo_image, padx=12, pady=12)

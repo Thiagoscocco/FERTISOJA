@@ -82,7 +82,7 @@ PKG_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
 HEADER_REL_ID = "rIdExportHeader"
 HEADER_PART = "header1.xml"
 HEADER_IMAGE_REL_ID = "rIdExportHeaderImage"
-HEADER_IMAGE_PATH = "media/logo_thiago.png"
+HEADER_IMAGE_PATH = "media/imagem.png"
 EMAIL_CONFIG_PATH = Path(__file__).resolve().parent.parent / "modelo_mail" / ".env"
 EMAIL_SUBJECT = "Recomenda\u00e7\u00e3o de Aduba\u00e7\u00e3o e Calagem \u2013 FertiSoja"
 EMAIL_SEPARATOR_PATTERN = re.compile(r"[;,]")
@@ -1010,20 +1010,10 @@ def _render_document_xml(xml_bytes: bytes, dados: dict[str, str], fertilizantes:
 
 def _gerar_documento_docx(modelo: Path, destino: Path, dados: dict[str, str], fertilizantes: list[FertilizanteLinha]) -> None:
     logo_bytes: bytes | None = None
-    assets_dir = Path(__file__).resolve().parent.parent / 'assets'
-    logo_candidates: list[Path] = []
-    if assets_dir.exists():
-        for candidate in assets_dir.glob('*'):
-            if candidate.is_file() and candidate.suffix.lower() in {'.png', '.jpg', '.jpeg'}:
-                normalized = candidate.stem.lower().replace(' ', '').replace('-', '').replace('_', '')
-                if normalized == 'logothiago':
-                    logo_candidates.append(candidate)
-        explicit = assets_dir / 'logo thiago png'
-        if explicit.exists():
-            logo_candidates.append(explicit)
-    if logo_candidates:
+    logo_path = Path(__file__).resolve().parent.parent / "imagem.png"
+    if logo_path.exists():
         try:
-            logo_bytes = logo_candidates[0].read_bytes()
+            logo_bytes = logo_path.read_bytes()
         except Exception:
             logo_bytes = None
     document_rels_bytes: bytes | None = None
@@ -1031,6 +1021,7 @@ def _gerar_documento_docx(modelo: Path, destino: Path, dados: dict[str, str], fe
         f'word/{HEADER_PART}',
         'word/_rels/header1.xml.rels',
         f'word/{HEADER_IMAGE_PATH}',
+        'word/media/logo_thiago.png',
     }
     with zipfile.ZipFile(modelo, 'r') as origem:
         with zipfile.ZipFile(destino, 'w', compression=zipfile.ZIP_DEFLATED) as alvo:

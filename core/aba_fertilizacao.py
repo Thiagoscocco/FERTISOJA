@@ -17,7 +17,7 @@ from fertilizacao import (
     obter_potassico_por_nome,
 )
 from .design_constants import *
-from .ui import make_section as build_section
+from .ui import make_section as build_section, place_logo_footer
 
 
 def make_section(parent, title: str, font: ctk.CTkFont):
@@ -395,9 +395,7 @@ def add_tab(tabhost, ctx):
     atualizar_fertilizacao(ctx)
 
     if logo_image is not None:
-        logo_label = ctk.CTkLabel(aba, image=logo_image, text='')
-        logo_label.pack(anchor='se', padx=12, pady=12)
-        logo_label.image = logo_image
+        place_logo_footer(aba, logo_image, padx=12, pady=12)
 
 
 __all__ = ['add_tab', 'atualizar_fertilizacao']

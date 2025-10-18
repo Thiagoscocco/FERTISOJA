@@ -327,3 +327,45 @@ __all__ = [
     "normalize_key",
     "parse_float",
 ]
+
+
+def place_logo_footer(
+    parent: ctk.CTkBaseClass,
+    logo_image: ctk.CTkImage | None,
+    *,
+    anchor: str = "s",
+    side: str = "bottom",
+    padx: int | tuple[int, int] = PADX_STANDARD,
+    pady: int | tuple[int, int] = PADY_STANDARD,
+    text: str = "DEV Thiagoscocco UFRGS 2025",
+) -> ctk.CTkFrame | None:
+    """Renderiza rodap\u00e9 com logotipo e texto de cr\u00e9dito."""
+    if logo_image is None:
+        return None
+
+    footer = ctk.CTkFrame(parent, fg_color="transparent")
+    footer.pack(side=side, anchor=anchor, fill="x", padx=padx, pady=pady)
+    footer.grid_columnconfigure(0, weight=1)
+    footer.grid_columnconfigure(1, weight=0)
+    footer.grid_rowconfigure(0, weight=0)
+    footer.grid_rowconfigure(1, weight=0)
+
+    logo_label = ctk.CTkLabel(footer, image=logo_image, text="")
+    logo_label.grid(row=0, column=1, rowspan=2, sticky="se", padx=(12, 0))
+    logo_label.image = logo_image
+
+    footer_font = ctk.CTkFont(size=FONT_SIZE_SMALL, weight="bold")
+    text_label = ctk.CTkLabel(
+        footer,
+        text=text,
+        font=footer_font,
+        text_color=TEXT_SECONDARY,
+        anchor="sw",
+        justify="left",
+    )
+    text_label.grid(row=1, column=0, columnspan=2, sticky="sw", padx=(PADX_STANDARD, 0), pady=(6, 0))
+
+    return footer
+
+
+__all__ += ["place_logo_footer"]

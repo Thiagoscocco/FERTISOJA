@@ -13,6 +13,7 @@ from .ui import (
     create_compact_form,
     create_label,
     make_section,
+    place_logo_footer,
 )
 from .design_constants import (
     ENTRY_WIDTH_SMALL,
@@ -47,7 +48,7 @@ TEST_DEFAULTS = {
 
 
 def _carregar_logo(parent: ctk.CTkScrollableFrame) -> ctk.CTkImage | None:
-    logo_path = Path(__file__).resolve().parent.parent / "assets" / "logo.png"
+    logo_path = Path(__file__).resolve().parent.parent / "imagem.png"
     try:
         imagem = Image.open(logo_path)
         max_w = 120
@@ -62,14 +63,15 @@ def _carregar_logo(parent: ctk.CTkScrollableFrame) -> ctk.CTkImage | None:
             dark_image=imagem,
             size=(imagem.width, imagem.height),
         )
-        logo_label = ctk.CTkLabel(parent, image=logo_image, text="")
-        logo_label.pack(anchor="ne", padx=PADX_STANDARD, pady=(0, PADY_STANDARD))
-        logo_label.image = logo_image
+        place_logo_footer(parent, logo_image)
         return logo_image
     except Exception:
-        ctk.CTkLabel(parent, text="(imagem não carregada)").pack(
-            anchor="ne", padx=PADX_STANDARD, pady=(0, PADY_STANDARD)
+        aviso = ctk.CTkLabel(
+            parent,
+            text="DEV Thiagoscocco UFRGS 2025",
+            font=ctk.CTkFont(size=12, weight="bold"),
         )
+        aviso.pack(side="bottom", anchor="sw", padx=PADX_STANDARD, pady=PADY_STANDARD)
         return None
 
 

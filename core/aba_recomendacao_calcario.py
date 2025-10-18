@@ -12,7 +12,7 @@ from core.calagem_dados import (
     lime_dose_from_polynomial,
 )
 from .design_constants import *
-from .ui import make_section as build_section
+from .ui import make_section as build_section, place_logo_footer
 
 PH_THRESHOLD_NEED = 5.5
 PH_SEVERE_PD = 5.2
@@ -341,22 +341,16 @@ def add_tab(tabhost, ctx):
     btn_calc.configure(command=calcular)
 
     if logo_image is not None:
-        logo_label = ctk.CTkLabel(outer, image=logo_image, text='')
-        logo_label.pack(anchor='se', padx=10, pady=10)
-        logo_label.image = logo_image
+        place_logo_footer(outer, logo_image, padx=10, pady=10)
     else:
         try:
             from PIL import Image
 
             base_dir = Path(__file__).resolve().parent
-            logo_path = base_dir / '..' / 'assets' / 'logo.png'
-            if not logo_path.exists():
-                logo_path = base_dir / 'logo.png'
+            logo_path = base_dir.parent / "imagem.png"
             img = Image.open(logo_path)
             img.thumbnail((120, 60))
             logo = ctk.CTkImage(light_image=img, dark_image=img, size=(img.width, img.height))
-            holder = ctk.CTkLabel(outer, image=logo, text='')
-            holder.image = logo
-            holder.pack(anchor='se', padx=10, pady=10)
+            place_logo_footer(outer, logo, padx=10, pady=10)
         except Exception:
             pass
