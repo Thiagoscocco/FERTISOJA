@@ -11,6 +11,7 @@ from fertilizacao import (
     FertilizacaoResultado,
     MOLIBDATO_PADRAO,
     calcular_formulado,
+    calcular_misto,
     calcular_individual_usuario,
     calcular_individual_software,
     obter_fosfatado_por_nome,
@@ -136,17 +137,38 @@ def _obter_demanda(ctx) -> tuple[Optional[Dict[str, float]], Optional[str]]:
 
 def _gerar_resultado(ctx, demanda: Dict[str, float], controles: Dict) -> Optional[FertilizacaoResultado]:
     modo = _normalize(controles['modo_var'].get())
+    entradas = controles['formulado_inputs']
+    n_txt = entradas['N'].get().strip()
+    p_txt = entradas['P2O5'].get().strip()
+    k_txt = entradas['K2O'].get().strip()
+    grade = {
+        'P2O5': _parse_float(p_txt),
+        'K2O': _parse_float(k_txt),
+    }
+    nome_formulado = f"Formulado N {n_txt or '0'} - P {p_txt or '0'} - K {k_txt or '0'}"
+
     if modo.startswith('fertilizantes form'):
-        entradas = controles['formulado_inputs']
-        n_txt = entradas['N'].get().strip()
-        p_txt = entradas['P2O5'].get().strip()
-        k_txt = entradas['K2O'].get().strip()
-        grade = {
-            'P2O5': _parse_float(p_txt),
-            'K2O': _parse_float(k_txt),
-        }
-        nome_formulado = f"Formulado N {n_txt or '0'} - P {p_txt or '0'} - K {k_txt or '0'}"
         return calcular_formulado(demanda, grade, nome_formulado)
+
+    if modo.startswith('misto'):
+        sacos_txt = controles['misto_sacos_var'].get().strip()
+        sacos = _parse_float(sacos_txt)
+        submodo_original = controles['submodo_var'].get()
+        fosfatado_sel = controles['fosfatado_var'].get()
+        potassico_sel = controles['potassico_var'].get()
+        fosfatado = obter_fosfatado_por_nome(fosfatado_sel)
+        potassico = obter_potassico_por_nome(potassico_sel)
+        codigo_p = fosfatado.codigo if fosfatado else None
+        codigo_k = potassico.codigo if potassico else None
+        return calcular_misto(
+            demanda,
+            grade,
+            sacos,
+            nome_formulado,
+            submodo_original,
+            codigo_p,
+            codigo_k,
+        )
 
     submodo = _normalize(controles['submodo_var'].get())
     if submodo.startswith('escolha do usuario'):
@@ -236,7 +258,7 @@ def add_tab(tabhost, ctx):
     ctk.CTkLabel(modo_body, text='Modo de cálculo:', font=body_font).grid(row=0, column=0, sticky='w', pady=4)
     modo_box = ctk.CTkComboBox(
         modo_body,
-        values=['Fertilizantes formulados', 'Fertilizantes individuais'],
+        values=['Fertilizantes formulados', 'Fertilizantes individuais', 'Misto'],
         variable=modo_var,
         state='readonly',
         width=220,
@@ -254,27 +276,106 @@ def add_tab(tabhost, ctx):
     formulado_frame.grid_columnconfigure(5, weight=1)
     ctk.CTkLabel(formulado_frame, text='Formulados N-P-K', font=subheading_font).grid(row=0, column=0, columnspan=6, sticky='w', pady=(PADY_SMALL, 6))
 
+    formulado_vars = {chave: ctk.StringVar(value='') for chave in ('N', 'P2O5', 'K2O')}
+
     ctk.CTkLabel(formulado_frame, text='N (%)', font=body_font).grid(row=1, column=0, sticky='w', pady=4, padx=(PADX_STANDARD, PADX_SMALL))
-    entrada_n = ctk.CTkEntry(formulado_frame, width=80)
+    entrada_n = ctk.CTkEntry(formulado_frame, width=80, textvariable=formulado_vars['N'])
     entrada_n.grid(row=1, column=1, sticky='ew', pady=4, padx=(0, PADX_SMALL))
 
     ctk.CTkLabel(formulado_frame, text='P2O5 (%)', font=body_font).grid(row=1, column=2, sticky='w', pady=4, padx=(PADX_SMALL, PADX_SMALL))
-    entrada_p = ctk.CTkEntry(formulado_frame, width=80)
+    entrada_p = ctk.CTkEntry(formulado_frame, width=80, textvariable=formulado_vars['P2O5'])
     entrada_p.grid(row=1, column=3, sticky='ew', pady=4, padx=(0, PADX_SMALL))
 
     ctk.CTkLabel(formulado_frame, text='K2O (%)', font=body_font).grid(row=1, column=4, sticky='w', pady=4, padx=(PADX_SMALL, PADX_SMALL))
-    entrada_k = ctk.CTkEntry(formulado_frame, width=80)
+    entrada_k = ctk.CTkEntry(formulado_frame, width=80, textvariable=formulado_vars['K2O'])
     entrada_k.grid(row=1, column=5, sticky='ew', pady=4, padx=(0, PADX_STANDARD))
+
+    formulado_entries = (entrada_n, entrada_p, entrada_k)
+
+    submodo_var = ctk.StringVar(value='Escolha do usuario')
+    fosfatado_var = ctk.StringVar(value='')
+    potassico_var = ctk.StringVar(value='')
+
+    misto_frame = ctk.CTkFrame(fertilizantes_body, **card_style)
+    misto_frame.grid_columnconfigure(0, weight=0)
+    misto_frame.grid_columnconfigure(1, weight=1)
+    misto_frame.grid_columnconfigure(2, weight=0)
+    misto_frame.grid_columnconfigure(3, weight=1)
+    misto_frame.grid_columnconfigure(4, weight=0)
+    misto_frame.grid_columnconfigure(5, weight=1)
+    ctk.CTkLabel(misto_frame, text='Modo misto (formulado + individuais)', font=subheading_font).grid(row=0, column=0, columnspan=6, sticky='w', pady=(PADY_SMALL, 6), padx=PADX_STANDARD)
+
+    ctk.CTkLabel(misto_frame, text='N (%)', font=body_font).grid(row=1, column=0, sticky='w', pady=4, padx=(PADX_STANDARD, PADX_SMALL))
+    misto_n = ctk.CTkEntry(misto_frame, width=80, textvariable=formulado_vars['N'])
+    misto_n.grid(row=1, column=1, sticky='ew', pady=4, padx=(0, PADX_SMALL))
+
+    ctk.CTkLabel(misto_frame, text='P2O5 (%)', font=body_font).grid(row=1, column=2, sticky='w', pady=4, padx=(PADX_SMALL, PADX_SMALL))
+    misto_p = ctk.CTkEntry(misto_frame, width=80, textvariable=formulado_vars['P2O5'])
+    misto_p.grid(row=1, column=3, sticky='ew', pady=4, padx=(0, PADX_SMALL))
+
+    ctk.CTkLabel(misto_frame, text='K2O (%)', font=body_font).grid(row=1, column=4, sticky='w', pady=4, padx=(PADX_SMALL, PADX_SMALL))
+    misto_k = ctk.CTkEntry(misto_frame, width=80, textvariable=formulado_vars['K2O'])
+    misto_k.grid(row=1, column=5, sticky='ew', pady=4, padx=(0, PADX_STANDARD))
+
+    misto_sacos_var = ctk.StringVar(value='')
+    ctk.CTkLabel(misto_frame, text='Sacos de 50 kg', font=body_font).grid(row=2, column=0, sticky='w', pady=4, padx=(PADX_STANDARD, PADX_SMALL))
+    misto_sacos_entry = ctk.CTkEntry(misto_frame, width=120, textvariable=misto_sacos_var)
+    misto_sacos_entry.grid(row=2, column=1, sticky='w', pady=4, padx=(0, PADX_STANDARD))
+
+    ctk.CTkLabel(misto_frame, text='Complemento com individuais', font=body_font).grid(row=3, column=0, columnspan=6, sticky='w', pady=(PADY_SMALL, 6), padx=PADX_STANDARD)
+
+    misto_opcoes_frame = ctk.CTkFrame(misto_frame, fg_color='transparent')
+    misto_opcoes_frame.grid(row=4, column=0, columnspan=6, sticky='ew', pady=4, padx=PADX_STANDARD)
+    misto_opcoes_frame.grid_columnconfigure(0, weight=0)
+    misto_opcoes_frame.grid_columnconfigure(1, weight=1)
+
+    ctk.CTkLabel(misto_opcoes_frame, text='Como deseja compor?', font=body_font).grid(row=0, column=0, sticky='w', pady=4, padx=(0, PADX_SMALL))
+    submodo_box_misto = ctk.CTkComboBox(
+        misto_opcoes_frame,
+        values=['Escolha do usuario', 'Escolha do software'],
+        variable=submodo_var,
+        state='readonly',
+        width=220,
+    )
+    submodo_box_misto.grid(row=0, column=1, sticky='w', pady=4, padx=(0, PADX_STANDARD))
+
+    misto_selecoes_frame = ctk.CTkFrame(misto_frame, fg_color='transparent')
+    misto_selecoes_frame.grid(row=5, column=0, columnspan=6, sticky='ew', pady=(8, PADY_SMALL), padx=PADX_STANDARD)
+    misto_selecoes_frame.grid_columnconfigure(0, weight=0)
+    misto_selecoes_frame.grid_columnconfigure(1, weight=1)
+    misto_selecoes_frame.grid_columnconfigure(2, weight=0)
+    misto_selecoes_frame.grid_columnconfigure(3, weight=1)
+
+    ctk.CTkLabel(misto_selecoes_frame, text='Fosfatado:', font=body_font).grid(row=0, column=0, sticky='w', pady=4, padx=(0, PADX_SMALL))
+    fosfatado_box_misto = ctk.CTkComboBox(
+        misto_selecoes_frame,
+        values=FOSFATADOS_CHOICES,
+        variable=fosfatado_var,
+        state='readonly',
+        width=210,
+    )
+    fosfatado_box_misto.grid(row=0, column=1, sticky='ew', pady=4, padx=(0, PADX_STANDARD))
+
+    ctk.CTkLabel(misto_selecoes_frame, text='Potǭssico:', font=body_font).grid(row=0, column=2, sticky='w', pady=4, padx=(0, PADX_SMALL))
+    potassico_box_misto = ctk.CTkComboBox(
+        misto_selecoes_frame,
+        values=POTASSICOS_CHOICES,
+        variable=potassico_var,
+        state='readonly',
+        width=210,
+    )
+    potassico_box_misto.grid(row=0, column=3, sticky='ew', pady=4, padx=(0, 0))
+
+    misto_entries = (misto_n, misto_p, misto_k, misto_sacos_entry)
 
     individual_frame = ctk.CTkFrame(fertilizantes_body, **card_style)
     individual_frame.grid_columnconfigure(0, weight=1)
     ctk.CTkLabel(individual_frame, text='Fertilizantes individuais', font=subheading_font).grid(row=0, column=0, columnspan=2, sticky='w', pady=(PADY_SMALL, 6), padx=PADX_STANDARD)
 
-    submodo_var = ctk.StringVar(value='Escolha do usuário')
     ctk.CTkLabel(individual_frame, text='Como deseja compor?', font=body_font).grid(row=1, column=0, sticky='w', pady=4, padx=PADX_STANDARD)
     submodo_box = ctk.CTkComboBox(
         individual_frame,
-        values=['Escolha do usuário', 'Escolha do software'],
+        values=['Escolha do usuario', 'Escolha do software'],
         variable=submodo_var,
         state='readonly',
         width=220,
@@ -288,7 +389,6 @@ def add_tab(tabhost, ctx):
     selecoes_frame.grid_columnconfigure(2, weight=0)
     selecoes_frame.grid_columnconfigure(3, weight=1)
 
-    fosfatado_var = ctk.StringVar(value='')
     ctk.CTkLabel(selecoes_frame, text='Fosfatado:', font=body_font).grid(row=0, column=0, sticky='w', pady=4, padx=(0, PADX_SMALL))
     fosfatado_box = ctk.CTkComboBox(
         selecoes_frame,
@@ -300,7 +400,6 @@ def add_tab(tabhost, ctx):
     fosfatado_box.grid(row=0, column=1, sticky='ew', pady=4, padx=(0, PADX_STANDARD))
     fosfatado_box.set('')
 
-    potassico_var = ctk.StringVar(value='')
     ctk.CTkLabel(selecoes_frame, text='Potássico:', font=body_font).grid(row=0, column=2, sticky='w', pady=4, padx=(0, PADX_SMALL))
     potassico_box = ctk.CTkComboBox(
         selecoes_frame,
@@ -344,10 +443,15 @@ def add_tab(tabhost, ctx):
         'resultado_var': resultado_var,
         'alerta_var': alerta_var,
         'status_var': status_var,
-        'formulado_inputs': {'N': entrada_n, 'P2O5': entrada_p, 'K2O': entrada_k},
+        'formulado_inputs': formulado_vars,
+        'formulado_entries': formulado_entries,
         'fosfatado_var': fosfatado_var,
         'potassico_var': potassico_var,
         'formulado_frame': formulado_frame,
+        'misto_frame': misto_frame,
+        'misto_sacos_var': misto_sacos_var,
+        'misto_selecoes_frame': misto_selecoes_frame,
+        'misto_entries': misto_entries,
         'individual_frame': individual_frame,
         'selecoes_frame': selecoes_frame,
         'ultimo_resultado': None,
@@ -359,39 +463,42 @@ def add_tab(tabhost, ctx):
     def recalcular_silencioso(*_):
         _executar_calculo(ctx, atualizar_status=False)
 
-    for entrada in (entrada_n, entrada_p, entrada_k):
+    for entrada in (*formulado_entries, *misto_entries):
         entrada.bind('<FocusOut>', lambda *_: recalcular_silencioso())
         entrada.bind('<Return>', lambda *_: recalcular_silencioso())
 
-    fosfatado_box.configure(command=lambda _: recalcular_silencioso())
-    potassico_box.configure(command=lambda _: recalcular_silencioso())
+    for box in (fosfatado_box, potassico_box, fosfatado_box_misto, potassico_box_misto):
+        box.configure(command=lambda *_: recalcular_silencioso())
 
     def atualizar_submodo(*_):
         sub_norm = _normalize(submodo_var.get())
+        frames_complementares = (selecoes_frame, misto_selecoes_frame)
         if sub_norm.startswith('escolha do usuario'):
-            selecoes_frame.grid()
+            for frame in frames_complementares:
+                frame.grid()
         else:
-            selecoes_frame.grid_remove()
+            for frame in frames_complementares:
+                frame.grid_remove()
         recalcular_silencioso()
 
     def atualizar_formulario(*_):
         modo_norm = _normalize(modo_var.get())
+        for frame in (formulado_frame, misto_frame, individual_frame):
+            frame.pack_forget()
         if modo_norm.startswith('fertilizantes form'):
-            individual_frame.pack_forget()
-            if formulado_frame.winfo_manager() == '':
-                formulado_frame.pack(fill='x', padx=PADX_SMALL, pady=(0, PADY_SMALL))
+            formulado_frame.pack(fill='x', padx=PADX_SMALL, pady=(0, PADY_SMALL))
+        elif modo_norm.startswith('misto'):
+            misto_frame.pack(fill='x', padx=PADX_SMALL, pady=(0, PADY_SMALL))
         else:
-            formulado_frame.pack_forget()
-            if individual_frame.winfo_manager() == '':
-                individual_frame.pack(fill='x', padx=PADX_SMALL, pady=(0, PADY_SMALL))
+            individual_frame.pack(fill='x', padx=PADX_SMALL, pady=(0, PADY_SMALL))
         atualizar_submodo()
         recalcular_silencioso()
 
     modo_box.configure(command=atualizar_formulario)
     submodo_box.configure(command=atualizar_submodo)
+    submodo_box_misto.configure(command=atualizar_submodo)
 
-    formulado_frame.pack(fill='x', padx=PADX_SMALL, pady=(0, PADY_SMALL))
-    atualizar_submodo()
+    atualizar_formulario()
     atualizar_fertilizacao(ctx)
 
     if logo_image is not None:

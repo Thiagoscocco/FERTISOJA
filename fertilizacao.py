@@ -152,6 +152,58 @@ def calcular_formulado(
     return FertilizacaoResultado(produtos=produtos, alertas=alertas, faltantes={})
 
 
+def calcular_misto(
+    demanda: Dict[str, float],
+    grade: Dict[str, float],
+    sacos_50kg: float,
+    nome_formulado: str,
+    modo_individual: str,
+    fosfatado_codigo: str | None = None,
+    potassico_codigo: str | None = None,
+) -> FertilizacaoResultado:
+    produtos: List[Tuple[str, float]] = []
+    alertas: List[str] = []
+
+    sacos = max(sacos_50kg, 0.0)
+    massa_formulado = sacos * 50.0
+    p_frac = max(grade.get('P2O5', 0.0), 0.0) / 100.0
+    k_frac = max(grade.get('K2O', 0.0), 0.0) / 100.0
+
+    p_aplicado = massa_formulado * p_frac
+    k_aplicado = massa_formulado * k_frac
+
+    if massa_formulado > 0:
+        if sacos.is_integer():
+            sacos_desc = str(int(sacos))
+        else:
+            sacos_desc = f"{sacos:.2f}".rstrip('0').rstrip('.')
+        nome_com_sacos = f"{nome_formulado} (sacos definidos: {sacos_desc} x 50 kg)"
+        _adicionar_produto(produtos, nome_com_sacos, massa_formulado)
+
+    demanda_restante = dict(demanda)
+    demanda_restante['P2O5'] = max(demanda_restante.get('P2O5', 0.0) - p_aplicado, 0.0)
+    demanda_restante['K2O'] = max(demanda_restante.get('K2O', 0.0) - k_aplicado, 0.0)
+
+    if p_aplicado > demanda.get('P2O5', 0.0):
+        excedente_p = p_aplicado - demanda.get('P2O5', 0.0)
+        alertas.append(f"O formulado excede o P2O5 em {excedente_p:.2f} kg/ha.")
+    if k_aplicado > demanda.get('K2O', 0.0):
+        excedente_k = k_aplicado - demanda.get('K2O', 0.0)
+        alertas.append(f"O formulado excede o K2O em {excedente_k:.2f} kg/ha.")
+
+    modo_norm = _normalize_name(modo_individual)
+    if modo_norm.startswith('escolha do software'):
+        complemento = calcular_individual_software(demanda_restante)
+    else:
+        complemento = calcular_individual_usuario(demanda_restante, fosfatado_codigo, potassico_codigo)
+
+    produtos.extend(complemento.produtos)
+    alertas.extend(complemento.alertas)
+
+    faltantes = complemento.faltantes
+    return FertilizacaoResultado(produtos=produtos, alertas=alertas, faltantes=faltantes)
+
+
 def calcular_individual_usuario(
     demanda: Dict[str, float],
     fosfatado_codigo: str | None,
@@ -260,6 +312,7 @@ __all__ = [
     'GESSO_PADRAO',
     'MOLIBDATO_PADRAO',
     'calcular_formulado',
+    'calcular_misto',
     'calcular_individual_usuario',
     'calcular_individual_software',
     'obter_fosfatado_por_nome',
