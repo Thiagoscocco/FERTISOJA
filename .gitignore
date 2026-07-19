@@ -1,29 +1,39 @@
 # Python
 __pycache__/
 *.py[cod]
+*.pyo
+*.pyd
 *.egg-info/
+
+# Build / empacotamento
 build/
 dist/
 
-# Ambientes
+# Ambientes locais
 .venv/
 venv/
 .env
+modelo_mail/.env
 
-# IDE/OS
+# IDE / sistema operacional
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
 
-# Dados/saídas locais (ajuste se precisar versionar algo)
+# Cache e arquivos temporarios
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.tmp
+*.temp
+*.log
+*.bak
+*.swp
+*.swo
+
+# Artefatos locais gerados pelo app
+assets/tile_cache/
 data/
 outputs/
-*.csv
-*.xlsx
-*.parquet
-*.ipynb_checkpoints
-
-# Logs
-*.log
 vendor/
