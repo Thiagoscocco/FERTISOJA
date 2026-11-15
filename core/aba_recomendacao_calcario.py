@@ -12,7 +12,7 @@ from core.calagem_dados import (
     lime_dose_from_polynomial,
 )
 from .design_constants import *
-from .ui import make_section as build_section, place_logo_footer
+from .ui import enable_mousewheel_scroll, make_section as build_section, place_logo_footer
 
 PH_THRESHOLD_NEED = 5.5
 PH_SEVERE_PD = 5.2
@@ -64,6 +64,7 @@ def add_tab(tabhost, ctx):
 
     aba = tabhost.add_tab('🪨 Recomendação de Calcário')
     outer = ctk.CTkScrollableFrame(aba, fg_color='transparent')
+    enable_mousewheel_scroll(ctx.janela, outer)
     outer.pack(fill='both', expand=True, padx=PADX_STANDARD, pady=PADY_STANDARD)
     outer.grid_columnconfigure(0, weight=1)
 
@@ -72,7 +73,7 @@ def add_tab(tabhost, ctx):
         sec_inputs.grid_columnconfigure(col, weight=1 if col % 2 == 1 else 0)
 
     ctk.CTkLabel(sec_inputs, text='Sistema de manejo:', font=body_font).grid(row=0, column=0, sticky='w', pady=4)
-    sistema_var = ctk.StringVar(value='PD consolidado')
+    sistema_var = ctk.StringVar(value='Implantação do PD')
     ctk.CTkComboBox(
         sec_inputs,
         values=['Convencional', 'Implantação do PD', 'PD consolidado'],
@@ -92,7 +93,7 @@ def add_tab(tabhost, ctx):
     ).grid(row=0, column=3, sticky='w', padx=6)
 
     ctk.CTkLabel(sec_inputs, text='pH alvo:', font=body_font).grid(row=1, column=0, sticky='w', pady=4)
-    ph_alvo_var = ctk.StringVar(value='6.0')
+    ph_alvo_var = ctk.StringVar(value='5.5')
     ctk.CTkComboBox(
         sec_inputs,
         values=['5.5', '6.0', '6.5'],
@@ -102,11 +103,11 @@ def add_tab(tabhost, ctx):
     ).grid(row=1, column=1, sticky='w', padx=6)
 
     ctk.CTkLabel(sec_inputs, text='V% atual:', font=body_font).grid(row=1, column=2, sticky='w', pady=4)
-    v_var = ctk.StringVar()
+    v_var = ctk.StringVar(value='69')
     ctk.CTkEntry(sec_inputs, textvariable=v_var, width=120).grid(row=1, column=3, sticky='w', padx=6)
 
     ctk.CTkLabel(sec_inputs, text='Al% (saturação):', font=body_font).grid(row=2, column=0, sticky='w', pady=4)
-    alpct_var = ctk.StringVar()
+    alpct_var = ctk.StringVar(value='0')
     ctk.CTkEntry(sec_inputs, textvariable=alpct_var, width=120).grid(row=2, column=1, sticky='w', padx=6)
 
     ctk.CTkLabel(sec_inputs, text='PRNT (%):', font=body_font).grid(row=2, column=2, sticky='w', pady=4)
@@ -114,7 +115,7 @@ def add_tab(tabhost, ctx):
     ctk.CTkEntry(sec_inputs, textvariable=prnt_var, width=120).grid(row=2, column=3, sticky='w', padx=6)
 
     ctk.CTkLabel(sec_inputs, text='Al trocável (cmolc/dm³):', font=body_font).grid(row=3, column=0, sticky='w', pady=4)
-    altroc_var = ctk.StringVar()
+    altroc_var = ctk.StringVar(value='0')
     ctk.CTkEntry(sec_inputs, textvariable=altroc_var, width=120).grid(row=3, column=1, sticky='w', padx=6)
 
     sec_summary = make_section(outer, 'Resumo da recomendação', heading_font)
@@ -126,6 +127,16 @@ def add_tab(tabhost, ctx):
         'epoca': ctk.StringVar(value='-'),
         'tipo': ctk.StringVar(value='-'),
         'tecnica': ctk.StringVar(value='Informe os dados para calcular.'),
+    }
+    ctx.calagem_controls = {
+        'sistema': sistema_var,
+        'profundidade': profundidade_var,
+        'ph_alvo': ph_alvo_var,
+        'v_pct': v_var,
+        'al_pct': alpct_var,
+        'prnt': prnt_var,
+        'al_trocavel': altroc_var,
+        'summary': summary_vars,
     }
     summary_rows = [
         ('Dose recomendada:', 'dose'),

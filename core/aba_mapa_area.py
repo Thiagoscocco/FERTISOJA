@@ -7,8 +7,8 @@ import xml.etree.ElementTree as ET
 import os
 import urllib.request
 from io import BytesIO
-
 from .ui import place_logo_footer
+
 
 try:
     from PIL import Image, ImageTk, ImageDraw

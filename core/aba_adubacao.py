@@ -6,6 +6,7 @@ from .context import AppContext, TabHost
 from .ui import (
     create_fertilizer_button,
     create_label,
+    enable_mousewheel_scroll,
     make_section,
     normalize_key,
     parse_float,
@@ -28,6 +29,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
 
     aba = tabhost.add_tab("🌻 Recomendações de Adubação")
     outer = ctk.CTkScrollableFrame(aba, fg_color="transparent")
+    enable_mousewheel_scroll(ctx.janela, outer)
     outer.pack(fill="both", expand=True, padx=PADX_STANDARD, pady=PADY_STANDARD)
     outer.grid_columnconfigure(0, weight=1)
 

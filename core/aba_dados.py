@@ -12,6 +12,7 @@ from .ui import (
     create_calc_button,
     create_compact_form,
     create_label,
+    enable_mousewheel_scroll,
     make_section,
     place_logo_footer,
 )
@@ -27,23 +28,23 @@ from .design_constants import (
 from . import aba_condicoes, aba_adubacao
 
 
-TEST_DEFAULTS = {
-    "Produtividade esperada": "3.6",
-    "Area (Ha)": "15",
-    "Indice SMP": "6.7",
-    "Argila (%)": "13",
-    "CTC (cmolc/dm3)": "2.5",
-    "M.O. (%)": "0.6",
-    "pH (Agua)": "4.7",
-    "P (mg/dm3)": "2.6",
-    "K (mg/dm3)": "21",
-    "S (mg/dm3)": "2.8",
-    "Ca (cmolc/dm3)": "0.3",
-    "Mg (cmolc/dm3)": "0.2",
-    "Zn (mg/dm3)": "0.3",
-    "Cu (mg/dm3)": "0.5",
-    "B (mg/dm3)": "0.1",
-    "Mn (mg/dm3)": "4",
+DEFAULTS = {
+    "Produtividade esperada": "6",
+    "Area (Ha)": "0.63",
+    "Indice SMP": "6.6",
+    "Argila (%)": "30",
+    "CTC (cmolc/dm3)": "7.23",
+    "M.O. (%)": "2.1",
+    "pH (Agua)": "5.9",
+    "P (mg/dm3)": "7.9",
+    "K (mg/dm3)": "126",
+    "S (mg/dm3)": "3.4",
+    "Ca (cmolc/dm3)": "1.6",
+    "Mg (cmolc/dm3)": "6",
+    "Zn (mg/dm3)": "2.4",
+    "Cu (mg/dm3)": "1.3",
+    "B (mg/dm3)": "0.4",
+    "Mn (mg/dm3)": "8",
 }
 
 
@@ -63,15 +64,9 @@ def _carregar_logo(parent: ctk.CTkScrollableFrame) -> ctk.CTkImage | None:
             dark_image=imagem,
             size=(imagem.width, imagem.height),
         )
-        place_logo_footer(parent, logo_image)
+        place_logo_footer(parent, logo_image, text="")
         return logo_image
     except Exception:
-        aviso = ctk.CTkLabel(
-            parent,
-            text="DEV Thiagoscocco UFRGS 2025",
-            font=ctk.CTkFont(size=12, weight="bold"),
-        )
-        aviso.pack(side="bottom", anchor="sw", padx=PADX_STANDARD, pady=PADY_STANDARD)
         return None
 
 
@@ -80,7 +75,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
     _, heading_font = aplicar_fonte_global(janela)
     ctx.heading_font = heading_font
 
-    cultivo_var = ctk.StringVar(value="1º Cultivo")
+    cultivo_var = ctk.StringVar(value="2º Cultivo")
     calculo.ligar_cultivo_var(cultivo_var)
     ctx.cultivo_var = cultivo_var
 
@@ -99,6 +94,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
     aba_entrada.grid_rowconfigure(1, weight=0)
 
     conteudo = ctk.CTkScrollableFrame(aba_entrada, fg_color="transparent")
+    enable_mousewheel_scroll(janela, conteudo)
     conteudo.grid(row=0, column=0, sticky="nsew", padx=PADX_STANDARD, pady=PADY_STANDARD)
     conteudo.grid_columnconfigure(0, weight=1)
 
@@ -112,7 +108,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
             ("Área (ha)", "Area (Ha)", ENTRY_WIDTH_SMALL),
         ],
         campos,
-        TEST_DEFAULTS,
+        DEFAULTS,
         columns=2,
         entry_width=ENTRY_WIDTH_STANDARD,
     )
@@ -150,7 +146,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
             ("pH (água)", "pH (Agua)", ENTRY_WIDTH_SMALL),
         ],
         campos,
-        TEST_DEFAULTS,
+        DEFAULTS,
         columns=2,
         entry_width=ENTRY_WIDTH_SMALL,
     )
@@ -170,7 +166,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
             ("Mn (mg/dm³)", "Mn (mg/dm3)", ENTRY_WIDTH_SMALL),
         ],
         campos,
-        TEST_DEFAULTS,
+        DEFAULTS,
         columns=3,
         entry_width=ENTRY_WIDTH_SMALL,
     )
@@ -179,8 +175,10 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
 
     def executar_calculo_principal() -> None:
         status_var.set("")
+        status_label.grid_remove()
         if calculo.calcular():
             status_var.set("Cálculo atualizado com sucesso.")
+            status_label.grid()
             aba_condicoes.atualizar(ctx)
             aba_adubacao.atualizar(ctx)
             atualiza_fert = getattr(ctx, "atualizar_fertilizacao", None)
@@ -189,18 +187,29 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
             atualiza_res = getattr(ctx, "atualizar_resultados", None)
             if callable(atualiza_res):
                 atualiza_res()
-            janela.after(4000, lambda: status_var.set(""))
+            def limpar_status() -> None:
+                status_var.set("")
+                status_label.grid_remove()
+
+            janela.after(4000, limpar_status)
 
     rodape = ctk.CTkFrame(aba_entrada, fg_color="transparent")
-    rodape.grid(row=1, column=0, sticky="ew", padx=PADX_STANDARD, pady=(PADY_SMALL, PADY_STANDARD))
+    rodape.grid(row=1, column=0, sticky="ew", padx=PADX_STANDARD, pady=(2, 6))
     rodape.grid_columnconfigure(0, weight=1)
 
-    btn_calcular = create_calc_button(rodape, "🧮 Calcular", executar_calculo_principal)
-    btn_calcular.grid(row=0, column=0, pady=(0, PADY_SMALL))
+    btn_calcular = create_calc_button(
+        rodape,
+        "🧮 Calcular",
+        executar_calculo_principal,
+        width=132,
+        height=36,
+    )
+    btn_calcular.grid(row=0, column=0)
 
     status_label = create_label(rodape, "", weight="bold")
     status_label.configure(textvariable=status_var, text_color=PRIMARY_BLUE, anchor="center")
     status_label.grid(row=1, column=0, sticky="n", padx=0)
+    status_label.grid_remove()
 
     ctx.logo_image = logo_image
 

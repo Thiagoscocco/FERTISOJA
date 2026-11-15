@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unicodedata
+import tkinter as tk
 from typing import Sequence
 
 import customtkinter as ctk
@@ -44,6 +45,47 @@ def _spacing_small() -> int:
     return max(PADY_SMALL - 2, 0)
 
 
+def enable_mousewheel_scroll(root: ctk.CTk, scrollable: ctk.CTkScrollableFrame) -> None:
+    """Add Linux wheel support over any child of a CTkScrollableFrame."""
+    registrations = getattr(root, "_mousewheel_scrollables", None)
+    if registrations is None:
+        registrations = []
+        root._mousewheel_scrollables = registrations
+
+        def scroll_under_pointer(event):
+            widget_path = str(event.widget)
+            targets = [
+                (frame_path, canvas)
+                for frame_path, canvas in root._mousewheel_scrollables
+                if widget_path == frame_path or widget_path.startswith(f"{frame_path}.")
+            ]
+            if not targets:
+                return None
+
+            _, canvas = max(targets, key=lambda target: len(target[0]))
+            try:
+                if getattr(event, "num", None) == 4:
+                    units = -3
+                elif getattr(event, "num", None) == 5:
+                    units = 3
+                else:
+                    delta = getattr(event, "delta", 0)
+                    if not delta:
+                        return None
+                    units = -max(1, round(abs(delta) / 120)) * (1 if delta > 0 else -1) * 3
+                canvas.yview_scroll(units, "units")
+            except (AttributeError, tk.TclError):
+                return None
+            return "break"
+
+        root.bind_all("<Button-4>", scroll_under_pointer, add="+")
+        root.bind_all("<Button-5>", scroll_under_pointer, add="+")
+
+    frame_path = str(scrollable._parent_frame)
+    if not any(path == frame_path for path, _ in registrations):
+        registrations.append((frame_path, scrollable._parent_canvas))
+
+
 def make_section(parent: ctk.CTkBaseClass, title: str, heading_font: ctk.CTkFont, *, wrap: int | None = 420) -> ctk.CTkFrame:
     """Cria uma seção com cartão e título estilizado."""
     wrapper = ctk.CTkFrame(
@@ -53,7 +95,7 @@ def make_section(parent: ctk.CTkBaseClass, title: str, heading_font: ctk.CTkFont
         border_width=CARD_BORDER_WIDTH,
         border_color=CARD_BORDER_COLOR,
     )
-    wrapper.pack(fill="x", expand=False, pady=(PADY_SMALL, 0))
+    wrapper.pack(fill="x", expand=False, pady=(PADY_SMALL, 4))
     wrapper.grid_columnconfigure(0, weight=1)
 
     header = ctk.CTkLabel(
@@ -263,6 +305,7 @@ def create_fertilizer_button(parent, text, command, **kwargs):
 
 def create_calc_button(parent, text, command, **kwargs):
     """Cria um botão específico para cálculos."""
+    kwargs.setdefault("height", BUTTON_HEIGHT_PRIMARY)
     return ctk.CTkButton(
         parent,
         text=text.upper(),
@@ -270,7 +313,6 @@ def create_calc_button(parent, text, command, **kwargs):
         fg_color=CALC_COLOR,
         hover_color=CALC_HOVER,
         font=ctk.CTkFont(size=FONT_SIZE_HEADING, weight="bold"),
-        height=BUTTON_HEIGHT_PRIMARY,
         **kwargs,
     )
 
@@ -337,7 +379,7 @@ def place_logo_footer(
     side: str = "bottom",
     padx: int | tuple[int, int] = PADX_STANDARD,
     pady: int | tuple[int, int] = PADY_STANDARD,
-    text: str = "DEV Thiagoscocco UFRGS 2025",
+    text: str = "",
 ) -> ctk.CTkFrame | None:
     """Renderiza rodap\u00e9 com logotipo e texto de cr\u00e9dito."""
     if logo_image is None:

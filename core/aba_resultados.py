@@ -11,6 +11,7 @@ import customtkinter as ctk
 from fertilizacao import GESSO_PADRAO, MOLIBDATO_PADRAO
 
 from .context import AppContext, TabHost
+from .ui import enable_mousewheel_scroll
 from .design_constants import (
     FONT_SIZE_BODY,
     FONT_SIZE_HEADING,
@@ -389,6 +390,7 @@ def add_tab(tabhost: TabHost, ctx: AppContext):
 
     aba = tabhost.add_tab("🌾 Resultados")
     outer = ctk.CTkScrollableFrame(aba, fg_color="transparent")
+    enable_mousewheel_scroll(ctx.janela, outer)
     outer.pack(fill="both", expand=True, padx=PADX_STANDARD, pady=PADY_STANDARD)
     outer.grid_columnconfigure(0, weight=1)
 

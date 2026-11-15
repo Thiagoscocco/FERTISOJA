@@ -22,6 +22,7 @@ from core.design_constants import (
     PLANT_HOVER,
     PRIMARY_BLUE,
     PRIMARY_HOVER,
+    TEXT_SECONDARY,
 )
 from core.intro_overlay import IntroOverlay
 
@@ -64,7 +65,7 @@ def main() -> None:
         corner_radius=CARD_CORNER_RADIUS,
         border_width=0,
     )
-    tabs_wrapper.grid(row=0, column=0, sticky="ew", padx=PADX_STANDARD, pady=(PADY_STANDARD, PADY_SMALL))
+    tabs_wrapper.grid(row=0, column=0, sticky="ew", padx=PADX_STANDARD, pady=(PADY_STANDARD, PADY_STANDARD))
     tabs_wrapper.grid_columnconfigure(0, weight=1)
 
     # TabView com estilo padronizado
@@ -78,7 +79,7 @@ def main() -> None:
         segmented_button_unselected_hover_color=(PRIMARY_BLUE, PRIMARY_BLUE),
         border_width=0,
     )
-    tabview.grid(row=1, column=0, sticky="nsew", padx=PADX_MICRO, pady=(0, PADY_SMALL))
+    tabview.grid(row=1, column=0, sticky="nsew", padx=PADX_MICRO, pady=(PADY_SMALL, PADY_SMALL))
 
     tabhost = TabHost(tabview)
 
@@ -99,7 +100,7 @@ def main() -> None:
         campos={},
         labels_classificacao={},
         labels_resultado={},
-        cultivo_var=ctk.StringVar(value="1º Cultivo"),
+        cultivo_var=ctk.StringVar(value="2º Cultivo"),
         calcular=lambda: False,
     )
 
@@ -182,6 +183,17 @@ def main() -> None:
 
     aba_condicoes.atualizar(ctx)
     aba_adubacao.atualizar(ctx)
+
+    rodape = ctk.CTkFrame(tab_container, fg_color="transparent")
+    rodape.grid(row=2, column=0, sticky="ew", padx=PADX_STANDARD, pady=(0, PADY_SMALL))
+    rodape.grid_columnconfigure(0, weight=1)
+    ctk.CTkLabel(
+        rodape,
+        text="DEV Thiagoscocco UFRGS 2025",
+        font=ctk.CTkFont(size=11, weight="bold"),
+        text_color=TEXT_SECONDARY,
+        anchor="w",
+    ).grid(row=0, column=0, sticky="sw", padx=PADX_SMALL)
 
     ctx.intro_overlay = IntroOverlay(tab_container)
 

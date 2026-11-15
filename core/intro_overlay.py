@@ -17,6 +17,7 @@ from .design_constants import (
     PRIMARY_HOVER,
     TEXT_PRIMARY,
 )
+from .ui import enable_mousewheel_scroll
 
 
 def _resource_path(relative: str) -> Path:
@@ -46,6 +47,7 @@ class IntroOverlay:
             scrollbar_button_color="#4f6ecf",
             scrollbar_button_hover_color="#4059a6",
         )
+        enable_mousewheel_scroll(self._parent.winfo_toplevel(), content)
         content.pack(expand=True, padx=60, pady=50, fill="both")
         content.grid_columnconfigure(0, weight=1)
 

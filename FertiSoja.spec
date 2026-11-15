@@ -5,7 +5,7 @@ a = Analysis(
     ['fertisoja.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('imagem.png', '.'), ('assets/Logo Thiago.png', 'assets')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

@@ -18,7 +18,7 @@ from fertilizacao import (
     obter_potassico_por_nome,
 )
 from .design_constants import *
-from .ui import make_section as build_section, place_logo_footer
+from .ui import enable_mousewheel_scroll, make_section as build_section, place_logo_footer
 
 
 def make_section(parent, title: str, font: ctk.CTkFont):
@@ -238,6 +238,7 @@ def add_tab(tabhost, ctx):
     heading_font = ctk.CTkFont(size=13, weight='bold')
     body_font = ctk.CTkFont(size=11)
     subheading_font = ctk.CTkFont(size=FONT_SIZE_BODY, weight='bold')
+    logo_image = getattr(ctx, 'logo_image', None)
     card_style = {
         'fg_color': (PANEL_LIGHT, PANEL_DARK),
         'border_width': 1,
@@ -245,10 +246,9 @@ def add_tab(tabhost, ctx):
         'corner_radius': 12,
     }
 
-    logo_image = getattr(ctx, 'logo_image', None)
-
     aba = tabhost.add_tab('🌿 Escolha dos Fertilizantes')
     outer = ctk.CTkScrollableFrame(aba, fg_color='transparent')
+    enable_mousewheel_scroll(ctx.janela, outer)
     outer.pack(fill='both', expand=True, padx=PADX_STANDARD, pady=PADY_STANDARD)
 
     modo_wrapper, modo_body = make_section(outer, 'CONFIGURAÇÃO', heading_font)
@@ -503,6 +503,7 @@ def add_tab(tabhost, ctx):
 
     if logo_image is not None:
         place_logo_footer(aba, logo_image, padx=12, pady=12)
+
 
 
 __all__ = ['add_tab', 'atualizar_fertilizacao']
