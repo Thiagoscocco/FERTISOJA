@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Parâmetros de design alinhados ao GUI_DESIGN_GUIDE.md
+Parâmetros de design alinhados ao docs/GUI_DESIGN_GUIDE.md
 e adaptados para o contexto agrícola do Fertisoja.
 """
 

@@ -91,7 +91,6 @@ def main() -> None:
         aba_recomendacao_calcario,
         aba_exportacao,
         aba_resultados,
-        aba_mapa_area,
     )
 
     ctx = AppContext(
@@ -111,7 +110,6 @@ def main() -> None:
     aba_fertilizacao.add_tab(tabhost, ctx)
     aba_resultados.add_tab(tabhost, ctx)
     aba_exportacao.add_tab(tabhost, ctx)
-    # aba_mapa_area.add_tab(tabhost, ctx)
 
     tab_segment = tabview._segmented_button  # noqa: SLF001
     tab_segment.grid_remove()

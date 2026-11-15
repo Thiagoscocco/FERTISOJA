@@ -33,7 +33,6 @@ Thumbs.db
 *.swo
 
 # Artefatos locais gerados pelo app
-assets/tile_cache/
 data/
 outputs/
 vendor/
